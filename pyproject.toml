@@ -28,7 +28,13 @@ classifiers = [
     "Typing :: Typed",
 ]
 dynamic = ["version"]
-dependencies = []
+dependencies = [
+    "h5py",
+    "hdf5plugin",
+    "natsort",
+    "loguru",
+    "scipy"
+]
 
 # extras
 # https://peps.python.org/pep-0621/#dependencies-optional-dependencies
