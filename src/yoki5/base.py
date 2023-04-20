@@ -35,7 +35,6 @@ class Store:
 
     def __init__(self, path: PathLike, groups: ty.List, attributes: ty.Dict, *, mode="a", init: bool = True):
         self.path = str(path)
-        self.h5 = None
         self.mode = mode
         self.attrs = Attributes(self)
 
@@ -49,10 +48,6 @@ class Store:
     def __str__(self):
         """Return the object name."""
         return self.path
-
-    def __del__(self):
-        if self.h5 is not None:
-            self.h5.close()
 
     def __getitem__(self, item: str) -> ty.Union[ty.Tuple[ty.Dict, ty.List, ty.List], np.ndarray]:
         try:
@@ -154,10 +149,6 @@ class Store:
 
         return short_names
 
-    def check_if_open(self):
-        """Checks whether h5 file is open"""
-        return "<Closed" in str(self.h5)
-
     @contextmanager
     def open(self, mode: str = None):
         """Safely open storage"""
@@ -174,8 +165,7 @@ class Store:
 
     def close(self):
         """Safely close file"""
-        if self.h5 is not None:
-            self.h5.close()
+        self.flush()
 
     def flush(self):
         """Flush h5 data"""
@@ -278,7 +268,7 @@ class Store:
 
     def get_dataset_data(self, dataset_name: str):
         """Safely retrieve storage data"""
-        with self.open() as h5:
+        with self.open("r") as h5:
             data = self._get_group(h5, dataset_name)
             output, full_names, short_names = self._get_dataset_data(data)
         return output, full_names, short_names
@@ -297,6 +287,7 @@ class Store:
 
     def set_array(self, dataset_name: str, key: str, array: np.ndarray, dtype=None, **kwargs):
         """Set array for particular key."""
+        self.check_can_write()
         with self.open() as h5:
             group = self._add_group(h5, dataset_name, get=True)
             self._add_data_to_group(group, key, array, dtype=dtype, **kwargs)
@@ -304,6 +295,7 @@ class Store:
 
     def rename_array(self, old_name: str, new_name: str, dataset_name: ty.Optional[str] = None):
         """Rename object."""
+        self.check_can_write()
         with self.open() as h5:
             if dataset_name:
                 old_name = f"{dataset_name}/{old_name}"
