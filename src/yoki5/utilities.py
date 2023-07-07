@@ -89,21 +89,3 @@ def find_case_insensitive(key: str, available_options: ty.List[str]):
     except IndexError:
         raise KeyError("Could not retrieve item.")
     return available_options[index]
-
-
-def repack(path_from: str, path_to: str):
-    """Repack existing file to a new file.
-
-    This is really only useful when trying to reduce size of an existing dataset that had some elements previously
-    deleted. Unfortunately, deletion of data from h5 document does not result in reduction of its size since that
-    data had already been allocated on the filesystem. The only way to deal with this is to rewrite the entire file.
-    """
-    # if path_from == path_to:
-    #     raise ValueError("The `path_from` and `path_to` cannot be the same.")
-    # if not os.path.exists(path_from):
-    #     raise ValueError("The `path_from` file must exist")
-    # if os.path.exists(path_to):
-    #     raise ValueError("The `path_to` file must not exist")
-    #
-    # # get object
-    # obj = DataStore(path_from, [], {})

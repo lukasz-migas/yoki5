@@ -100,7 +100,7 @@ class Store:
     def check_can_write(self, msg: str = "Cannot write data to file. Try re-opening in append ('a') mode."):
         """Raises `OSError` if cannot write."""
         if not self.can_write():
-            raise OSError(msg)
+            raise OSError(msg + f" Current mode: {self.mode}")
         return True
 
     @contextmanager
@@ -301,6 +301,18 @@ class Store:
                 old_name = f"{dataset_name}/{old_name}"
                 new_name = f"{dataset_name}/{new_name}"
             h5.move(old_name, new_name)
+
+    def remove_array(self, dataset_name: str, key: str):
+        """Remove an array from store."""
+        self.check_can_write()
+        with self.open() as h5:
+            group = self._get_group(h5, dataset_name)
+            del group[key]
+
+    def _remove_array(self, h5, dataset_name: str, key: str):
+        """Remove an array from store."""
+        group = self._get_group(h5, dataset_name)
+        del group[key]
 
     def get_data(
         self, dataset_name: str, data_keys: ty.List[str] = None, attrs_keys: ty.List[str] = None

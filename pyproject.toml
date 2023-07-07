@@ -33,7 +33,8 @@ dependencies = [
     "hdf5plugin",
     "natsort",
     "loguru",
-    "scipy"
+    "scipy",
+    "koyo"
 ]
 
 # extras
