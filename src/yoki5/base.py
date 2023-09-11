@@ -203,11 +203,13 @@ class Store:
         with self.open("r") as h5:
             return group in h5
 
-    def has_attr(self, group: str, attr: str):
+    def has_attr(self, group: ty.Optional[str], attr: str):
         """Check whether specified group has an attribute."""
         with self.open("r") as h5:
-            group = self._get_group(h5, group)
-            return attr in group.attrs
+            if group:
+                group = self._get_group(h5, group)
+                return attr in group.attrs
+            return attr in h5.attrs
 
     def has_attrs(self, attrs_keys: ty.List[str]) -> bool:
         """Check whether object has attributes"""

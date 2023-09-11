@@ -1,14 +1,46 @@
 """Mixins."""
 import typing as ty
+from pathlib import Path
 
 import numpy as np
 import typing_extensions as tye
 
 
 class H5Protocol(tye.Protocol):
-    """Mixin class"""
+    """Mixin class."""
+
+    path: Path
+
+    def open(self, *args, **kwargs):
+        """Open dataset."""
+        ...
+    def get_unique_name(self, *args, **kwargs):
+        """Get unique name by incrementing.."""
+        ...
+    def has_data(self, *args, **kwargs):
+        """Get unique name by incrementing.."""
+        ...
+    def add_data_to_dataset(self, *args, **kwargs):
+        """Add data to group.."""
+        ...
+
+    def get_group_names(self, *args, **kwargs):
+        """Get group names."""
+        ...
+
+    def get_df(self, *args, **kwargs):
+        """Get dataframe."""
+        ...
+
+    def get_dataset_data(self, *args, **kwargs):
+        """Get dataset data."""
+        ...
 
     def can_write(self) -> bool:
+        """Check whether we can write."""
+        ...
+
+    def enable_write(self):
         """Check whether we can write."""
         ...
 
@@ -46,6 +78,18 @@ class H5Protocol(tye.Protocol):
 
     def has_group(self, *args, **kwargs) -> ty.Any:
         """Get array."""
+        ...
+
+
+class H5MultiiProtocol(tye.Protocol):
+    _objs: ty.Dict[str, H5Protocol]
+
+    def can_write(self) -> bool:
+        """Check whether we can write."""
+        ...
+
+    def _get_any_obj(self) -> ty.Any:
+        """Get object."""
         ...
 
 
