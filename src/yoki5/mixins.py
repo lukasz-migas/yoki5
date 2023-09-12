@@ -14,12 +14,15 @@ class H5Protocol(tye.Protocol):
     def open(self, *args, **kwargs):
         """Open dataset."""
         ...
+
     def get_unique_name(self, *args, **kwargs):
         """Get unique name by incrementing.."""
         ...
+
     def has_data(self, *args, **kwargs):
         """Get unique name by incrementing.."""
         ...
+
     def add_data_to_dataset(self, *args, **kwargs):
         """Add data to group.."""
         ...
@@ -81,7 +84,7 @@ class H5Protocol(tye.Protocol):
         ...
 
 
-class H5MultiiProtocol(tye.Protocol):
+class H5MultiProtocol(tye.Protocol):
     _objs: ty.Dict[str, H5Protocol]
 
     def can_write(self) -> bool:
