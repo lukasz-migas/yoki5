@@ -39,6 +39,10 @@ class H5Protocol(tye.Protocol):
         """Get dataset data."""
         ...
 
+    def get_dataset_data_attrs(self, *args, **kwargs):
+        """Get dataset data."""
+        ...
+
     def can_write(self) -> bool:
         """Check whether we can write."""
         ...
