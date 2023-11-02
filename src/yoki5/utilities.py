@@ -220,7 +220,8 @@ def display_name_contains(klass, filelist: ty.Iterable[PathLike], contains: str,
 
 
 def name_contains(
-    filelist: ty.Iterable[PathLike], contains: str, get_first: bool = False, base_dir: ty.Optional[PathLike] = None
+    filelist: ty.Iterable[PathLike], contains: str, get_first: bool = False, base_dir: ty.Optional[PathLike] = None,
+        filename_only   : bool = False,
 ) -> ty.Union[Path, ty.List[Path]]:
     """Return list of items which contain specified string."""
     from pathlib import Path
@@ -237,26 +238,18 @@ def name_contains(
             contains += end
 
         # this will match ANY files in the directory, even if it is not directly in the folder but in the general path
-        filelist = Path(base_dir).glob(contains)
-        # we need filter-down based on the filenames only
-        filelist_ = []
-        for file in filelist:
-            if contains in file.name:
-                filelist_.append(file)
-        filelist = filelist_
+        filelist = list(Path(base_dir).glob(contains))
         if get_first and filelist:
             return filelist[0]
         return filelist
 
-    # if contains and Path(contains).exists() and get_first:
-    #     return contains
-    _filelist = []
-    for file in filelist:
-        if contains in str(file):
-            _filelist.append(file)
-    if get_first and _filelist:
-        return _filelist[0]
-    return _filelist
+    filelist_ = []
+    for file in [Path(p) for p in filelist]:
+        if contains in str(file.name if filename_only else file):
+            filelist_.append(file)
+    if get_first and filelist_:
+        return filelist_[0]
+    return filelist_
 
 
 def get_object_path(path_or_tag: PathLike, func: ty.Callable, kind: str) -> Path:
