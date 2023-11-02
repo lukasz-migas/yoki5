@@ -220,8 +220,11 @@ def display_name_contains(klass, filelist: ty.Iterable[PathLike], contains: str,
 
 
 def name_contains(
-    filelist: ty.Iterable[PathLike], contains: str, get_first: bool = False, base_dir: ty.Optional[PathLike] = None,
-        filename_only   : bool = False,
+    filelist: ty.Iterable[PathLike],
+    contains: str,
+    get_first: bool = False,
+    base_dir: ty.Optional[PathLike] = None,
+    filename_only: bool = False,
 ) -> ty.Union[Path, ty.List[Path]]:
     """Return list of items which contain specified string."""
     from pathlib import Path
@@ -242,6 +245,9 @@ def name_contains(
         if get_first and filelist:
             return filelist[0]
         return filelist
+
+    if Path(contains).is_file() and Path(contains).exists():
+        return Path(contains)
 
     filelist_ = []
     for file in [Path(p) for p in filelist]:
@@ -281,7 +287,7 @@ def optimize_chunks_along_axis(
     max_size: int = 1e6,
     auto: bool = True,
 ) -> ty.Optional[ty.Tuple[int, ...]]:
-    """Optimize chunk size along specified axis"""
+    """Optimize chunk size along specified axis."""
     if array is not None:
         dtype, shape = array.dtype, array.shape
     elif shape is None or dtype is None:
