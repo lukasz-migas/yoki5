@@ -236,7 +236,14 @@ def name_contains(
                 end = end[0:-1]
             contains += end
 
-        filelist = list(Path(base_dir).glob(contains))
+        # this will match ANY files in the directory, even if it is not directly in the folder but in the general path
+        filelist = Path(base_dir).glob(contains)
+        # we need filter-down based on the filenames only
+        filelist_ = []
+        for file in filelist:
+            if contains in file.name:
+                filelist_.append(file)
+        filelist = filelist_
         if get_first and filelist:
             return filelist[0]
         return filelist
