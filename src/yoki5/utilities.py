@@ -250,8 +250,9 @@ def name_contains(
         return Path(contains)
 
     filelist_ = []
+    contains = contains.lower()
     for file in [Path(p) for p in filelist]:
-        if contains in str(file.name if filename_only else file):
+        if contains in str(file.name if filename_only else file).lower():
             filelist_.append(file)
     if get_first and filelist_:
         return filelist_[0]
