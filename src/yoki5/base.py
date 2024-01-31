@@ -1,14 +1,16 @@
 """HDF5 store"""
+from __future__ import annotations
+
 import typing as ty
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 
 import h5py
-import hdf5plugin  # noqa: F401
+import hdf5plugin  # noqa: ignore
 import numpy as np
-from natsort import natsorted
 from loguru import logger
+from natsort import natsorted
 from scipy.sparse import coo_matrix, csc_matrix, csr_matrix, issparse
 
 from yoki5.attrs import Attributes
@@ -21,7 +23,6 @@ from yoki5.utilities import (
     parse_to_attribute,
 )
 
-
 # Local globals
 RECOGNIZED_MODES = ["a", "r", "r+", "w"]
 
@@ -29,11 +30,11 @@ RECOGNIZED_MODES = ["a", "r", "r+", "w"]
 class Store:
     """Base data store"""
 
-    HDF5_GROUPS: ty.List[str]
-    HDF5_ATTRIBUTES: ty.Dict[str, str]
+    HDF5_GROUPS: list[str]
+    HDF5_ATTRIBUTES: dict[str, str]
     VERSION: str
 
-    def __init__(self, path: PathLike, groups: ty.List, attributes: ty.Dict, *, mode="a", init: bool = True):
+    def __init__(self, path: PathLike, groups: list, attributes: dict, *, mode="a", init: bool = True):
         self.path = str(path)
         self.mode = mode
         self.attrs = Attributes(self)
@@ -49,7 +50,7 @@ class Store:
         """Return the object name."""
         return self.path
 
-    def __getitem__(self, item: str) -> ty.Union[ty.Tuple[ty.Dict, ty.List, ty.List], np.ndarray]:
+    def __getitem__(self, item: str) -> ty.Union[tuple[dict, list, list], np.ndarray]:
         try:
             return self.get_dataset_data(item)
         except ValueError:
@@ -111,7 +112,7 @@ class Store:
         yield self
         self.mode = mode
 
-    def initialize_dataset(self, groups: ty.List, attributes: ty.Dict):
+    def initialize_dataset(self, groups: list, attributes: dict):
         """Safely initialize storage"""
         if self.can_write():
             with self.open() as h5:
@@ -126,13 +127,19 @@ class Store:
         with self.open() as h5:
             return list(h5.keys())
 
-    def get_group_names(self, group_name: str, include_group: bool = False):
+    def get_group_names(self, group_name: str, include_group: bool = False) -> list[str]:
         """Get list of group names"""
         with self.open() as h5:
-            names = list(h5[group_name].keys())
-            if include_group:
-                names = [f"{group_name}/{name}" for name in names]
-            return names
+            names = self._get_group_names(h5, group_name, include_group)
+        return names
+
+    @staticmethod
+    def _get_group_names(h5: h5py.Group, group_name: str, include_group: bool = False) -> list[str]:
+        """Get list of groups."""
+        names = list(h5[group_name].keys())
+        if include_group:
+            names = [f"{group_name}/{name}" for name in names]
+        return names
 
     def check_missing(self, group_names):
         """Check for missing keys"""
@@ -141,7 +148,7 @@ class Store:
         return group_names
 
     @staticmethod
-    def get_short_names(full_names: ty.List):
+    def get_short_names(full_names: list):
         """Get short names"""
         short_names = list()
         for name in full_names:
@@ -190,7 +197,7 @@ class Store:
         with self.open() as h5:
             self._add_group(h5, group_name)
 
-    def has_groups(self, group_keys: ty.List[str]) -> bool:
+    def has_groups(self, group_keys: list[str]) -> bool:
         """Check whether object has groups"""
         with self.open("r") as h5:
             for group in group_keys:
@@ -211,7 +218,7 @@ class Store:
                 return attr in group.attrs
             return attr in h5.attrs
 
-    def has_attrs(self, attrs_keys: ty.List[str]) -> bool:
+    def has_attrs(self, attrs_keys: list[str]) -> bool:
         """Check whether object has attributes"""
         with self.open("r") as h5:
             for group in attrs_keys:
@@ -236,7 +243,7 @@ class Store:
             except KeyError:
                 return 0
 
-    def has_keys(self, dataset_name: str, data_keys: ty.List[str] = None, attrs_keys: ty.List[str] = None) -> bool:
+    def has_keys(self, dataset_name: str, data_keys: list[str] = None, attrs_keys: list[str] = None) -> bool:
         """Checks whether dataset contains specified `data` and/or` attrs` keys
 
         Parameters
@@ -281,7 +288,7 @@ class Store:
             group = self._get_group(h5, dataset_name)
             return group[key][:]
 
-    def get_arrays(self, dataset_name: str, *keys: str) -> ty.List[np.ndarray]:
+    def get_arrays(self, dataset_name: str, *keys: str) -> list[np.ndarray]:
         """Safely retrieve multiple arrays."""
         with self.open("r") as h5:
             group = self._get_group(h5, dataset_name)
@@ -317,8 +324,8 @@ class Store:
         del group[key]
 
     def get_data(
-        self, dataset_name: str, data_keys: ty.List[str] = None, attrs_keys: ty.List[str] = None
-    ) -> ty.Tuple[ty.Dict, ty.Dict]:
+        self, dataset_name: str, data_keys: list[str] = None, attrs_keys: list[str] = None
+    ) -> tuple[dict, dict]:
         """Get data for a particular dataset"""
         if data_keys is None:
             data_keys = []
@@ -344,15 +351,19 @@ class Store:
             group.attrs[attr] = parse_to_attribute(value)
             self._flush(h5)
 
-    def get_attrs(self, dataset_name: str, attrs: ty.List[str]):
+    def get_attrs(self, dataset_name: str, attrs: list[str]):
         """Safely retrieve attributes"""
         if isinstance(attrs, str):
             attrs = [attrs]
 
         with self.open("r") as h5:
-            group = self._get_group(h5, dataset_name)
-            attrs_out = [parse_from_attribute(group.attrs.get(item)) for item in attrs]
+            attrs_out = self._get_attrs(h5, dataset_name, attrs)
         return attrs_out
+
+    def _get_attrs(self, h5, group_name: str, attrs: list[str]):
+        group = self._get_group(h5, group_name)
+        _attrs = [parse_from_attribute(group.attrs.get(item)) for item in attrs]
+        return _attrs
 
     def _get_dataset_data(self, data: ty.Union[h5py.Group, h5py.Dataset]):
         """Retrieve storage data"""
@@ -378,7 +389,7 @@ class Store:
         short_names = self.get_short_names(full_names)
         return output, full_names, short_names
 
-    def _get_dataset_data_attrs(self, data: ty.Union[h5py.Group, h5py.Dataset]) -> ty.Tuple[ty.Dict, ty.Dict]:
+    def _get_dataset_data_attrs(self, data: ty.Union[h5py.Group, h5py.Dataset]) -> tuple[dict, dict]:
         """Retrieve storage data"""
         _data, _attrs = dict(), dict()
 
@@ -400,7 +411,7 @@ class Store:
             raise ValueError("Expected a 'Group' object only")
         return _data, _attrs
 
-    def _get_dataset_attrs(self, data: ty.Union[h5py.Group, h5py.Dataset]) -> ty.Dict:
+    def _get_dataset_attrs(self, data: ty.Union[h5py.Group, h5py.Dataset]) -> dict:
         """Retrieve storage data"""
         _attrs = dict()
 
@@ -417,14 +428,14 @@ class Store:
             raise ValueError("Expected a 'Group' object only")
         return _attrs
 
-    def get_dataset_data_attrs(self, dataset_name: str) -> ty.Tuple[ty.Dict, ty.Dict]:
+    def get_dataset_data_attrs(self, dataset_name: str) -> tuple[dict, dict]:
         """Safely retrieve storage data"""
         with self.open() as h5:
             group = self._get_group(h5, dataset_name)
             _data, _attrs = self._get_dataset_data_attrs(group)
         return _data, _attrs
 
-    def get_dataset_attrs(self, dataset_name: str) -> ty.Dict:
+    def get_dataset_attrs(self, dataset_name: str) -> dict:
         """Safely retrieve all attributes in particular dataset"""
         with self.open() as h5:
             group = self._get_group(h5, dataset_name)
@@ -439,7 +450,6 @@ class Store:
         group_name : str
         sort : bool
         """
-
         full_names = list()
         with self.open("r") as h5:
             group = self._add_group(h5, group_name, get=True)
@@ -462,7 +472,7 @@ class Store:
         with self.open() as h5:
             self._add_attributes(h5, *args)
 
-    def add_attributes_to_dataset(self, dataset_name: str, attributes: ty.Dict):
+    def add_attributes_to_dataset(self, dataset_name: str, attributes: dict):
         """Add attributes to dataset"""
         with self.open() as h5:
             dataset = self._add_group(h5, dataset_name, get=True)
@@ -533,7 +543,7 @@ class Store:
             return coo_matrix((data["data"], data["row"], data["col"]), shape=data["shape"])
 
     @staticmethod
-    def unpack_sparse_array(array) -> ty.Tuple[ty.Dict, ty.Dict]:
+    def unpack_sparse_array(array) -> tuple[dict, dict]:
         """Unpack sparse array"""
         if not issparse(array):
             return array, dict()
@@ -549,7 +559,7 @@ class Store:
             raise ValueError("Cannot serialise this sparse format")
         return data, dict(format=array.format, shape=array.shape, is_sparse=True)
 
-    def _initilize_dataset(self, h5, groups: ty.List[str] = None, attributes: ty.Dict = None):
+    def _initilize_dataset(self, h5, groups: list[str] = None, attributes: dict = None):
         """Initilize storage"""
         if groups is None:
             groups = []
@@ -564,9 +574,7 @@ class Store:
             self._add_group(h5, group_name)
 
     @staticmethod
-    def _pre_initialize_dataset(
-        h5, groups: ty.List[str] = None, attributes: ty.Dict = None
-    ) -> ty.Tuple[ty.List[str], ty.Dict]:
+    def _pre_initialize_dataset(h5, groups: list[str] = None, attributes: dict = None) -> tuple[list[str], dict]:
         """Check whether dataset needs initialization"""
         needs_group, needs_attributes = [], {}
         for key in groups:
@@ -577,7 +585,7 @@ class Store:
                 needs_attributes[key] = value
         return needs_group, needs_attributes
 
-    def _add_attributes(self, dataset, attributes: ty.Dict):
+    def _add_attributes(self, dataset, attributes: dict):
         if attributes is None:
             attributes = dict()
 
