@@ -759,3 +759,14 @@ class Store:
         while dataset_name + " #" + "%d".zfill(n_fill) % n in group_obj:
             n += 1
         return dataset_name + " #" + "%d".zfill(n_fill) % n
+
+    @staticmethod
+    def _remove_group(h5, group_name: str, flush: bool = True):
+        """Remove group"""
+        try:
+            del h5[group_name]
+        except KeyError:
+            pass
+
+        if flush:
+            h5.flush()
