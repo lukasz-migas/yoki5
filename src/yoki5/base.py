@@ -241,7 +241,9 @@ class Store:
             except KeyError:
                 return 0
 
-    def has_keys(self, dataset_name: str, data_keys: list[str] | None = None, attrs_keys: list[str] | None = None) -> bool:
+    def has_keys(
+        self, dataset_name: str, data_keys: list[str] | None = None, attrs_keys: list[str] | None = None
+    ) -> bool:
         """Checks whether dataset contains specified `data` and/or` attrs` keys.
 
         Parameters
@@ -549,10 +551,20 @@ class Store:
         # CSR/CSC matrices have common attributes
         if array.format in ["csr", "csc"]:
             data = {
-                "format": array.format, "shape": array.shape, "data": array.data, "indices": array.indices, "indptr": array.indptr
+                "format": array.format,
+                "shape": array.shape,
+                "data": array.data,
+                "indices": array.indices,
+                "indptr": array.indptr,
             }
         elif array.format == "coo":
-            data = {"format": array.format, "shape": array.shape, "data": array.data, "col": array.col, "row": array.row}
+            data = {
+                "format": array.format,
+                "shape": array.shape,
+                "data": array.data,
+                "col": array.col,
+                "row": array.row,
+            }
         else:
             raise ValueError("Cannot serialise this sparse format")
         return data, {"format": array.format, "shape": array.shape, "is_sparse": True}
@@ -572,7 +584,9 @@ class Store:
             self._add_group(h5, group_name)
 
     @staticmethod
-    def _pre_initialize_dataset(h5, groups: list[str] | None = None, attributes: dict | None = None) -> tuple[list[str], dict]:
+    def _pre_initialize_dataset(
+        h5, groups: list[str] | None = None, attributes: dict | None = None
+    ) -> tuple[list[str], dict]:
         """Check whether dataset needs initialization."""
         needs_group, needs_attributes = [], {}
         for key in groups:

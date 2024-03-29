@@ -2,7 +2,7 @@
 from pathlib import Path
 
 import h5py
-import hdf5plugin  # noqa
+import hdf5plugin
 from koyo.typing import PathLike
 
 
