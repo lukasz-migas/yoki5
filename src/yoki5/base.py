@@ -1,13 +1,11 @@
-"""HDF5 store"""
+"""HDF5 store."""
 from __future__ import annotations
 
-import typing as ty
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 
 import h5py
-import hdf5plugin  # noqa: ignore
 import numpy as np
 from loguru import logger
 from natsort import natsorted
@@ -28,7 +26,7 @@ RECOGNIZED_MODES = ["a", "r", "r+", "w"]
 
 
 class Store:
-    """Base data store"""
+    """Base data store."""
 
     HDF5_GROUPS: list[str]
     HDF5_ATTRIBUTES: dict[str, str]
@@ -50,7 +48,7 @@ class Store:
         """Return the object name."""
         return self.path
 
-    def __getitem__(self, item: str) -> ty.Union[tuple[dict, list, list], np.ndarray]:
+    def __getitem__(self, item: str) -> tuple[dict, list, list] | np.ndarray:
         try:
             return self.get_dataset_data(item)
         except ValueError:
@@ -73,7 +71,7 @@ class Store:
         return Path(self.path).stem
 
     @property
-    def unique_id(self) -> ty.Optional[str]:
+    def unique_id(self) -> str | None:
         """Return short name of the storage object."""
         return self.attrs.get("unique_id")
 
@@ -95,7 +93,7 @@ class Store:
         h5["date_edited"] = datetime.now().strftime(TIME_FORMAT)
 
     def can_write(self) -> bool:
-        """Checks whether data can be written"""
+        """Checks whether data can be written."""
         return self.mode in ["a", "w"]
 
     def check_can_write(self, msg: str = "Cannot write data to file. Try re-opening in append ('a') mode."):
@@ -113,7 +111,7 @@ class Store:
         self.mode = mode
 
     def initialize_dataset(self, groups: list, attributes: dict):
-        """Safely initialize storage"""
+        """Safely initialize storage."""
         if self.can_write():
             with self.open() as h5:
                 self._initilize_dataset(h5, groups, attributes)
@@ -123,12 +121,12 @@ class Store:
         self.VERSION = self.HDF5_ATTRIBUTES.get("VERSION", "N/A")
 
     def get_document_names(self):
-        """Get list of names in the document"""
+        """Get list of names in the document."""
         with self.open() as h5:
             return list(h5.keys())
 
     def get_group_names(self, group_name: str, include_group: bool = False) -> list[str]:
-        """Get list of group names"""
+        """Get list of group names."""
         with self.open() as h5:
             names = self._get_group_names(h5, group_name, include_group)
         return names
@@ -142,23 +140,23 @@ class Store:
         return names
 
     def check_missing(self, group_names):
-        """Check for missing keys"""
+        """Check for missing keys."""
         present_names = self.get_document_names()
         group_names = list(set(group_names) - set(present_names))
         return group_names
 
     @staticmethod
     def get_short_names(full_names: list):
-        """Get short names"""
-        short_names = list()
+        """Get short names."""
+        short_names = []
         for name in full_names:
             short_names.append(name.split("/")[-1])
 
         return short_names
 
     @contextmanager
-    def open(self, mode: str = None):
-        """Safely open storage"""
+    def open(self, mode: str | None = None):
+        """Safely open storage."""
         if mode is None:
             mode = self.mode
         try:
@@ -171,34 +169,34 @@ class Store:
             f_ptr.close()
 
     def close(self):
-        """Safely close file"""
+        """Safely close file."""
         self.flush()
 
     def flush(self):
-        """Flush h5 data"""
+        """Flush h5 data."""
         with self.open() as h5:
             self._flush(h5)
 
     @staticmethod
     def _flush(h5):
-        """Flush h5 data"""
+        """Flush h5 data."""
         h5.flush()
 
     def keys(self):
-        """Return list of h5 keys"""
+        """Return list of h5 keys."""
         with self.open("r") as h5:
             names = list(h5.keys())
         return names
 
     def reset_group(self, group_name: str):
-        """Reset group"""
+        """Reset group."""
         self.check_can_write()
         del self[group_name]
         with self.open() as h5:
             self._add_group(h5, group_name)
 
     def has_groups(self, group_keys: list[str]) -> bool:
-        """Check whether object has groups"""
+        """Check whether object has groups."""
         with self.open("r") as h5:
             for group in group_keys:
                 if group not in h5:
@@ -206,11 +204,11 @@ class Store:
         return True
 
     def has_group(self, group: str) -> bool:
-        """Check whether object has groups"""
+        """Check whether object has groups."""
         with self.open("r") as h5:
             return group in h5
 
-    def has_attr(self, group: ty.Optional[str], attr: str):
+    def has_attr(self, group: str | None, attr: str):
         """Check whether specified group has an attribute."""
         with self.open("r") as h5:
             if group:
@@ -219,7 +217,7 @@ class Store:
             return attr in h5.attrs
 
     def has_attrs(self, attrs_keys: list[str]) -> bool:
-        """Check whether object has attributes"""
+        """Check whether object has attributes."""
         with self.open("r") as h5:
             for group in attrs_keys:
                 if group not in h5.attrs:
@@ -236,15 +234,15 @@ class Store:
                 return False
 
     def has_data(self, dataset_name: str) -> int:
-        """Check whether there is data in specific dataset/group"""
+        """Check whether there is data in specific dataset/group."""
         with self.open("r") as h5:
             try:
                 return len(self._get_group(h5, dataset_name)) != 0
             except KeyError:
                 return 0
 
-    def has_keys(self, dataset_name: str, data_keys: list[str] = None, attrs_keys: list[str] = None) -> bool:
-        """Checks whether dataset contains specified `data` and/or` attrs` keys
+    def has_keys(self, dataset_name: str, data_keys: list[str] | None = None, attrs_keys: list[str] | None = None) -> bool:
+        """Checks whether dataset contains specified `data` and/or` attrs` keys.
 
         Parameters
         ----------
@@ -276,14 +274,14 @@ class Store:
         return not data_miss and not attrs_miss
 
     def get_dataset_data(self, dataset_name: str):
-        """Safely retrieve storage data"""
+        """Safely retrieve storage data."""
         with self.open("r") as h5:
             data = self._get_group(h5, dataset_name)
             output, full_names, short_names = self._get_dataset_data(data)
         return output, full_names, short_names
 
     def get_array(self, dataset_name: str, key: str) -> np.ndarray:
-        """Safely retrieve 1 array"""
+        """Safely retrieve 1 array."""
         with self.open("r") as h5:
             group = self._get_group(h5, dataset_name)
             return group[key][:]
@@ -302,7 +300,7 @@ class Store:
             self._add_data_to_group(group, key, array, dtype=dtype, **kwargs)
             self._flush(h5)
 
-    def rename_array(self, old_name: str, new_name: str, dataset_name: ty.Optional[str] = None):
+    def rename_array(self, old_name: str, new_name: str, dataset_name: str | None = None):
         """Rename object."""
         self.check_can_write()
         with self.open() as h5:
@@ -324,9 +322,9 @@ class Store:
         del group[key]
 
     def get_data(
-        self, dataset_name: str, data_keys: list[str] = None, attrs_keys: list[str] = None
+        self, dataset_name: str, data_keys: list[str] | None = None, attrs_keys: list[str] | None = None
     ) -> tuple[dict, dict]:
-        """Get data for a particular dataset"""
+        """Get data for a particular dataset."""
         if data_keys is None:
             data_keys = []
         if attrs_keys is None:
@@ -338,13 +336,13 @@ class Store:
         return data, attrs
 
     def get_attr(self, dataset_name, attr: str, default=None):
-        """Safely retrieve 1 attribute"""
+        """Safely retrieve 1 attribute."""
         with self.open("r") as h5:
             group = self._get_group(h5, dataset_name)
             value = parse_from_attribute(group.attrs.get(attr, default))
             return value
 
-    def set_attr(self, dataset_name, attr: str, value: ty.Union[str, int, float, bool]):
+    def set_attr(self, dataset_name, attr: str, value: str | int | float | bool):
         """Set attribute value."""
         with self.open(self.mode) as h5:
             group = self._get_group(h5, dataset_name)
@@ -352,7 +350,7 @@ class Store:
             self._flush(h5)
 
     def get_attrs(self, dataset_name: str, attrs: list[str]):
-        """Safely retrieve attributes"""
+        """Safely retrieve attributes."""
         if isinstance(attrs, str):
             attrs = [attrs]
 
@@ -365,10 +363,10 @@ class Store:
         _attrs = [parse_from_attribute(group.attrs.get(item)) for item in attrs]
         return _attrs
 
-    def _get_dataset_data(self, data: ty.Union[h5py.Group, h5py.Dataset]):
-        """Retrieve storage data"""
-        output = dict()
-        full_names = list()
+    def _get_dataset_data(self, data: h5py.Group | h5py.Dataset):
+        """Retrieve storage data."""
+        output = {}
+        full_names = []
 
         # check if the data object is a group
         if isinstance(data, h5py.Group):
@@ -389,9 +387,9 @@ class Store:
         short_names = self.get_short_names(full_names)
         return output, full_names, short_names
 
-    def _get_dataset_data_attrs(self, data: ty.Union[h5py.Group, h5py.Dataset]) -> tuple[dict, dict]:
-        """Retrieve storage data"""
-        _data, _attrs = dict(), dict()
+    def _get_dataset_data_attrs(self, data: h5py.Group | h5py.Dataset) -> tuple[dict, dict]:
+        """Retrieve storage data."""
+        _data, _attrs = {}, {}
 
         # check if the data object is a group
         if isinstance(data, h5py.Group):
@@ -411,9 +409,9 @@ class Store:
             raise ValueError("Expected a 'Group' object only")
         return _data, _attrs
 
-    def _get_dataset_attrs(self, data: ty.Union[h5py.Group, h5py.Dataset]) -> dict:
-        """Retrieve storage data"""
-        _attrs = dict()
+    def _get_dataset_attrs(self, data: h5py.Group | h5py.Dataset) -> dict:
+        """Retrieve storage data."""
+        _attrs = {}
 
         # check if the data object is a group
         if isinstance(data, h5py.Group):
@@ -429,28 +427,28 @@ class Store:
         return _attrs
 
     def get_dataset_data_attrs(self, dataset_name: str) -> tuple[dict, dict]:
-        """Safely retrieve storage data"""
+        """Safely retrieve storage data."""
         with self.open() as h5:
             group = self._get_group(h5, dataset_name)
             _data, _attrs = self._get_dataset_data_attrs(group)
         return _data, _attrs
 
     def get_dataset_attrs(self, dataset_name: str) -> dict:
-        """Safely retrieve all attributes in particular dataset"""
+        """Safely retrieve all attributes in particular dataset."""
         with self.open() as h5:
             group = self._get_group(h5, dataset_name)
             _attrs = self._get_dataset_attrs(group)
         return _attrs
 
     def get_dataset_names(self, group_name: str, sort: bool = False):
-        """Get groups names
+        """Get groups names.
 
         Parameters
         ----------
         group_name : str
         sort : bool
         """
-        full_names = list()
+        full_names = []
         with self.open("r") as h5:
             group = self._add_group(h5, group_name, get=True)
             for dataset in group.values():
@@ -463,17 +461,17 @@ class Store:
         return full_names, short_names
 
     def add_attribute(self, attribute_name, attribute_value):
-        """Safely add single attribute to dataset"""
+        """Safely add single attribute to dataset."""
         with self.open() as h5:
             self._add_attribute(h5, attribute_name, attribute_value)
 
     def add_attributes(self, *args):
-        """Safely add attributes to storage"""
+        """Safely add attributes to storage."""
         with self.open() as h5:
             self._add_attributes(h5, *args)
 
     def add_attributes_to_dataset(self, dataset_name: str, attributes: dict):
-        """Add attributes to dataset"""
+        """Add attributes to dataset."""
         with self.open() as h5:
             dataset = self._add_group(h5, dataset_name, get=True)
             self._add_attributes(dataset, attributes)
@@ -502,7 +500,7 @@ class Store:
         return pd.DataFrame.from_dict(pickle.loads(array.tobytes()))
 
     def add_data_to_dataset(self, group_name, data, attributes=None, dtype=None, as_sparse: bool = False, **kwargs):
-        """Safely add data to storage"""
+        """Safely add data to storage."""
         with self.open() as h5:
             if as_sparse or issparse(data):
                 self._add_sparse_data_to_dataset(h5, group_name, data, attributes, dtype, **kwargs)
@@ -510,7 +508,7 @@ class Store:
                 self._add_data_to_dataset(h5, group_name, data, attributes, dtype, **kwargs)
 
     def get_unique_name(self, group_name: str, dataset_name: str, n_fill=4, join=False):
-        """Safely get unique name"""
+        """Safely get unique name."""
         _group_name = group_name
         if "/" in group_name:
             _group_name = group_name.split("/")[0]
@@ -525,8 +523,8 @@ class Store:
             return group_name + "/" + dataset_name
         return dataset_name
 
-    def get_sparse_array(self, group_name: str) -> ty.Union[csc_matrix, csr_matrix, coo_matrix]:
-        """Get sparse array from the dataset"""
+    def get_sparse_array(self, group_name: str) -> csc_matrix | csr_matrix | coo_matrix:
+        """Get sparse array from the dataset."""
         data, _, _ = self.get_dataset_data(group_name)
         if "format" not in data:
             raise ValueError("Could not parse sparse dataset!")
@@ -544,23 +542,23 @@ class Store:
 
     @staticmethod
     def unpack_sparse_array(array) -> tuple[dict, dict]:
-        """Unpack sparse array"""
+        """Unpack sparse array."""
         if not issparse(array):
-            return array, dict()
+            return array, {}
 
         # CSR/CSC matrices have common attributes
         if array.format in ["csr", "csc"]:
-            data = dict(
-                format=array.format, shape=array.shape, data=array.data, indices=array.indices, indptr=array.indptr
-            )
+            data = {
+                "format": array.format, "shape": array.shape, "data": array.data, "indices": array.indices, "indptr": array.indptr
+            }
         elif array.format == "coo":
-            data = dict(format=array.format, shape=array.shape, data=array.data, col=array.col, row=array.row)
+            data = {"format": array.format, "shape": array.shape, "data": array.data, "col": array.col, "row": array.row}
         else:
             raise ValueError("Cannot serialise this sparse format")
-        return data, dict(format=array.format, shape=array.shape, is_sparse=True)
+        return data, {"format": array.format, "shape": array.shape, "is_sparse": True}
 
-    def _initilize_dataset(self, h5, groups: list[str] = None, attributes: dict = None):
-        """Initilize storage"""
+    def _initilize_dataset(self, h5, groups: list[str] | None = None, attributes: dict | None = None):
+        """Initilize storage."""
         if groups is None:
             groups = []
         if attributes is None:
@@ -574,8 +572,8 @@ class Store:
             self._add_group(h5, group_name)
 
     @staticmethod
-    def _pre_initialize_dataset(h5, groups: list[str] = None, attributes: dict = None) -> tuple[list[str], dict]:
-        """Check whether dataset needs initialization"""
+    def _pre_initialize_dataset(h5, groups: list[str] | None = None, attributes: dict | None = None) -> tuple[list[str], dict]:
+        """Check whether dataset needs initialization."""
         needs_group, needs_attributes = [], {}
         for key in groups:
             if key not in h5:
@@ -587,7 +585,7 @@ class Store:
 
     def _add_attributes(self, dataset, attributes: dict):
         if attributes is None:
-            attributes = dict()
+            attributes = {}
 
         if not isinstance(attributes, dict):
             raise ValueError("'Attributes' must be a dictionary with key:value pairs!")
@@ -601,7 +599,7 @@ class Store:
             logger.warning(f"Group {group_name} not in {self.HDF5_GROUPS}...")
 
         if attributes is None:
-            attributes = dict()
+            attributes = {}
 
         group = self._add_group(h5, group_name, get=True)
         # add attributes to the group
@@ -622,7 +620,7 @@ class Store:
         dtype=None,
         **kwargs,
     ):
-        """Add sparse data to the dataset
+        """Add sparse data to the dataset.
 
         Parameters
         ----------
@@ -631,7 +629,7 @@ class Store:
         attributes :
         """
         if not isinstance(attributes, dict):
-            attributes = dict()
+            attributes = {}
 
         # unpack sparse array
         data, data_attributes = self.unpack_sparse_array(data)
@@ -663,7 +661,7 @@ class Store:
 
     @staticmethod
     def _get_group(h5, group_name: str):
-        """Get group"""
+        """Get group."""
         return h5[group_name]
 
     @staticmethod
@@ -678,7 +676,7 @@ class Store:
         compression_opts=None,
         shape=None,
     ):
-        """Add data to group"""
+        """Add data to group."""
         replaced_dataset = False
 
         if dtype is None:
@@ -712,7 +710,7 @@ class Store:
 
     @staticmethod
     def _get_group_data(dataset):
-        output = dict()
+        output = {}
         for obj_name in dataset:
             try:
                 output[obj_name] = dataset[obj_name][()]
@@ -728,7 +726,7 @@ class Store:
 
     @staticmethod
     def _get_group_attrs(group: h5py.Group):
-        output = dict()
+        output = {}
         for obj_name in group.attrs:
             try:
                 output[obj_name] = parse_from_attribute(group.attrs[obj_name])
@@ -738,7 +736,7 @@ class Store:
 
     @staticmethod
     def _get_group_data_attrs(group: h5py.Group):
-        data, attrs = dict(), dict()
+        data, attrs = {}, {}
         for obj_name in group:
             try:
                 data[obj_name] = group[obj_name][()]
@@ -754,7 +752,7 @@ class Store:
 
     @staticmethod
     def _get_unique_name(group_obj, dataset_name: str, n_fill: int):
-        """Get unique name"""
+        """Get unique name."""
         n = 0
         while dataset_name + " #" + "%d".zfill(n_fill) % n in group_obj:
             n += 1
@@ -762,7 +760,7 @@ class Store:
 
     @staticmethod
     def _remove_group(h5, group_name: str, flush: bool = True):
-        """Remove group"""
+        """Remove group."""
         try:
             del h5[group_name]
         except KeyError:

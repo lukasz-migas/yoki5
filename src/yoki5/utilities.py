@@ -1,4 +1,5 @@
 """Utilities for yoki5."""
+
 import hashlib
 import typing as ty
 import uuid
@@ -225,6 +226,7 @@ def name_contains(
     get_first: bool = False,
     base_dir: ty.Optional[PathLike] = None,
     filename_only: bool = False,
+    exact_match: bool = False,
 ) -> ty.Union[Path, ty.List[Path]]:
     """Return list of items which contain specified string."""
     from pathlib import Path
@@ -251,9 +253,15 @@ def name_contains(
 
     filelist_ = []
     contains = contains.lower()
-    for file in [Path(p) for p in filelist]:
-        if contains in str(file.name if filename_only else file).lower():
-            filelist_.append(file)
+    if not exact_match:
+        for file in [Path(p) for p in filelist]:
+            if contains in str(file.name if filename_only else file).lower():
+                filelist_.append(file)
+    else:
+        has_h5 = contains.endswith(".h5")
+        for file in [Path(p) for p in filelist]:
+            if contains == str((file.name if has_h5 else file.stem) if filename_only else file).lower():
+                filelist_.append(file)
     if get_first and filelist_:
         return filelist_[0]
     return filelist_

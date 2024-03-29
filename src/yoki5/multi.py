@@ -25,7 +25,7 @@ class MultiStore:
 
     def _get_any(self):
         """Get any available peaks object."""
-        return list(self._objs.keys())[0]
+        return next(iter(self._objs.keys()))
 
     def _get_any_obj(self):
         return self._objs[self._get_any()]
@@ -43,7 +43,7 @@ class MultiStore:
             yield Path(obj.path)
 
     def can_write(self) -> bool:
-        """Checks whether data can be written"""
+        """Checks whether data can be written."""
         return self.mode in ["a", "w"]
 
     @contextmanager
@@ -55,7 +55,7 @@ class MultiStore:
         self.mode = mode
 
     def close(self):
-        """Close handle"""
+        """Close handle."""
         for obj in self._objs.values():
             obj.close()
 
