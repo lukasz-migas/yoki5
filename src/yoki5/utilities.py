@@ -18,24 +18,25 @@ if ty.TYPE_CHECKING:
 TIME_FORMAT = "%d/%m/%Y-%H:%M:%S:%f"
 
 
-def encode_str_array(array: np.ndarray | list[str]) -> np.ndarray:
+def encode_str_array(array: np.ndarray | list[str], encoding: str = "utf-8") -> np.ndarray:
     """Encode array of U strings as S strings."""
     if isinstance(array, list):
-        return np.asarray([v.encode() for v in array])
+        return np.asarray([v.encode(encoding) for v in array])
 
     if np.issubdtype(array.dtype, np.dtype("S")):
         return array
-    out = [v.encode() for v in array]
+    out = [v.encode(encoding) for v in array]
     return np.asarray(out)
 
 
-def decode_str_array(array: np.ndarray) -> np.ndarray:
+def decode_str_array(array: np.ndarray | list[str], encoding: str = "utf-8") -> np.ndarray:
     """Decode array of S strings to U strings."""
+    if isinstance(array, list):
+        return np.asarray([v.decode(encoding) for v in array])
+
     if np.issubdtype(array.dtype, np.dtype("U")):
         return array
-    out = []
-    for row in array:
-        out.append([v.decode() for v in row])
+    out = [v.decode(encoding) for v in array]
     return np.asarray(out)
 
 
