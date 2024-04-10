@@ -1,4 +1,5 @@
 """Utilities for yoki5."""
+from __future__ import annotations
 
 import hashlib
 import typing as ty
@@ -17,13 +18,14 @@ if ty.TYPE_CHECKING:
 TIME_FORMAT = "%d/%m/%Y-%H:%M:%S:%f"
 
 
-def encode_str_array(array: np.ndarray) -> np.ndarray:
+def encode_str_array(array: np.ndarray | list[str]) -> np.ndarray:
     """Encode array of U strings as S strings."""
+    if isinstance(array, list):
+        return np.asarray([v.encode() for v in array])
+
     if np.issubdtype(array.dtype, np.dtype("S")):
         return array
-    out = []
-    for row in array:
-        out.append([v.encode() for v in row])
+    out = [v.encode() for v in array]
     return np.asarray(out)
 
 
