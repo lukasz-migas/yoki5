@@ -70,7 +70,7 @@ def resize_by_insert_2d(h5, key: str, array: np.ndarray, axis: int, indices: ty.
         h5[key][:, -len(indices) + i] = array
 
 
-def df_to_buffer(df: "pd.DataFrame") -> np.ndarray:
+def df_to_buffer(df: pd.DataFrame) -> np.ndarray:
     """Turn pandas dataframe into a buffer."""
     import pickle
 
@@ -79,7 +79,7 @@ def df_to_buffer(df: "pd.DataFrame") -> np.ndarray:
     return data
 
 
-def buffer_to_df(buffer: np.ndarray) -> "pd.DataFrame":
+def buffer_to_df(buffer: np.ndarray) -> pd.DataFrame:
     """Turn buffer into pandas dataframe."""
     import pickle
 
@@ -89,7 +89,7 @@ def buffer_to_df(buffer: np.ndarray) -> "pd.DataFrame":
     return pd.DataFrame.from_dict(data)
 
 
-def df_to_dict(df: "pd.DataFrame") -> ty.Dict[str, np.ndarray]:
+def df_to_dict(df: pd.DataFrame) -> ty.Dict[str, np.ndarray]:
     """Convert pandas dataframe to dict with arrays."""
     return {
         "columns": df.columns.to_numpy(dtype="S"),
@@ -99,7 +99,7 @@ def df_to_dict(df: "pd.DataFrame") -> ty.Dict[str, np.ndarray]:
     }
 
 
-def dict_to_df(data: ty.Dict[str, np.ndarray]) -> "pd.DataFrame":
+def dict_to_df(data: ty.Dict[str, np.ndarray]) -> pd.DataFrame:
     """Convert dict to pandas dataframe."""
     import pandas as pd
 
