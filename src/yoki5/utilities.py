@@ -36,7 +36,10 @@ def decode_str_array(array: np.ndarray | list[str], encoding: str = "utf-8") -> 
 
     if np.issubdtype(array.dtype, np.dtype("U")):
         return array
-    out = [v.decode(encoding) for v in array]
+    if array.ndim == 1:
+        out = [v.decode(encoding) for v in array]
+    else:
+        out = [[v.decode(encoding) for v in row] for row in array]
     return np.asarray(out)
 
 
