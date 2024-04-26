@@ -1,6 +1,7 @@
 """HDF5 store."""
 from __future__ import annotations
 
+import typing as ty
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -33,7 +34,7 @@ class Store:
     VERSION: str
 
     def __init__(self, path: PathLike, groups: list, attributes: dict, *, mode="a", init: bool = True):
-        self.path = str(path)
+        self.path: str = str(path)
         self.mode = mode
         self.attrs = Attributes(self)
 
@@ -103,7 +104,7 @@ class Store:
         return True
 
     @contextmanager
-    def enable_write(self):
+    def enable_write(self) -> ty.Generator[Store, None, None]:
         """Temporarily enable writing."""
         mode = self.mode
         self.mode = "a"
@@ -168,27 +169,27 @@ class Store:
         finally:
             f_ptr.close()
 
-    def close(self):
+    def close(self) -> None:
         """Safely close file."""
         self.flush()
 
-    def flush(self):
+    def flush(self) -> None:
         """Flush h5 data."""
         with self.open() as h5:
             self._flush(h5)
 
     @staticmethod
-    def _flush(h5):
+    def _flush(h5) -> None:
         """Flush h5 data."""
         h5.flush()
 
-    def keys(self):
+    def keys(self) -> list[str]:
         """Return list of h5 keys."""
         with self.open("r") as h5:
             names = list(h5.keys())
         return names
 
-    def reset_group(self, group_name: str):
+    def reset_group(self, group_name: str) -> None:
         """Reset group."""
         self.check_can_write()
         del self[group_name]
