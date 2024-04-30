@@ -209,7 +209,9 @@ def get_unique_id(path: PathLike) -> str:
     return unique_id
 
 
-def display_name_contains(klass, filelist: ty.Iterable[PathLike], contains: str, get_first: bool = False):
+def display_name_contains(
+    klass, filelist: ty.Iterable[PathLike], contains: str, get_first: bool = False
+) -> ty.Union[Path, ty.List[Path]]:
     """Return list or item which has specified display name."""
     assert hasattr(klass, "display_name"), "Class object is missing 'display_name' attribute."
     _filelist = []
