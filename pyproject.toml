@@ -34,7 +34,8 @@ dependencies = [
     "natsort",
     "loguru",
     "scipy",
-    "koyo"
+    "koyo",
+    "pandas<2"
 ]
 
 # extras
