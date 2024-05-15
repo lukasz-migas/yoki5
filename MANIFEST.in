@@ -10,7 +10,6 @@ include MANIFEST.in
 include LICENSE
 recursive-include tests *
 recursive-include src *.typed
-exclude Makefile
 
 # Always include
 global-include *.pyx
