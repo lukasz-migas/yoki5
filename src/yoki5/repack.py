@@ -1,12 +1,12 @@
 """Repack existing file to a new file."""
+
 from pathlib import Path
 
 import h5py
-import hdf5plugin
 from koyo.typing import PathLike
 
 
-def repack(path_from: PathLike, path_to: PathLike):
+def repack(path_from: PathLike, path_to: PathLike) -> None:
     """Repack existing file to a new file.
 
     This is really only useful when trying to reduce size of an existing dataset that had some elements previously
@@ -34,7 +34,7 @@ def repack(path_from: PathLike, path_to: PathLike):
                 to_f.attrs[key] = from_f.attrs[key]
 
 
-def repack_and_replace(path_from: PathLike, path_to: PathLike):
+def repack_and_replace(path_from: PathLike, path_to: PathLike) -> None:
     """Repack an existing file to a new file and replace the original file with the new one."""
     path_from = Path(path_from)
     path_to = Path(path_to)

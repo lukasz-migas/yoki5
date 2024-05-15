@@ -49,7 +49,7 @@ def resize_by_append_1d(h5, key: str, array: np.ndarray):
     h5[key][-array.shape[0] :] = array
 
 
-def resize_by_insert_1d(h5, key: str, array: np.ndarray, indices: ty.List[int]):
+def resize_by_insert_1d(h5, key: str, array: np.ndarray, indices: list[int]):
     """Resize 2D array along specified dimension."""
     h5[key].resize(h5[key].shape[0] + len(indices), axis=0)
     h5[key][-array.shape[0] :] = array[indices]
@@ -66,7 +66,7 @@ def resize_by_append_2d(h5, key: str, array: np.ndarray, axis: int):
         h5[key][:, -array.shape[axis] :] = array
 
 
-def resize_by_insert_2d(h5, key: str, array: np.ndarray, axis: int, indices: ty.List[int]):
+def resize_by_insert_2d(h5, key: str, array: np.ndarray, axis: int, indices: list[int]):
     """Resize 2D array along specified dimension."""
     h5[key].resize(h5[key].shape[axis] + len(indices), axis=axis)
     for i, _index in enumerate(indices):
@@ -92,7 +92,7 @@ def buffer_to_df(buffer: np.ndarray) -> pd.DataFrame:
     return pd.DataFrame.from_dict(data)
 
 
-def df_to_dict(df: pd.DataFrame) -> ty.Dict[str, np.ndarray]:
+def df_to_dict(df: pd.DataFrame) -> dict[str, np.ndarray]:
     """Convert pandas dataframe to dict with arrays."""
     return {
         "columns": df.columns.to_numpy(dtype="S"),
@@ -102,7 +102,7 @@ def df_to_dict(df: pd.DataFrame) -> ty.Dict[str, np.ndarray]:
     }
 
 
-def dict_to_df(data: ty.Dict[str, np.ndarray]) -> pd.DataFrame:
+def dict_to_df(data: dict[str, np.ndarray]) -> pd.DataFrame:
     """Convert dict to pandas dataframe."""
     import pandas as pd
 
@@ -129,7 +129,7 @@ def get_short_hash(n: int = 0) -> str:
     return value[0:n] if n else value
 
 
-def hash_obj(data: ty.Union[ty.Iterable, ty.List, ty.Dict, ty.Tuple, str, int, float]) -> str:
+def hash_obj(data: ty.Iterable | list | dict | tuple | str | int | float) -> str:
     """Hash python object."""
     hash_id = hashlib.md5()
     hash_id.update(repr(data).encode("utf-8"))
@@ -142,7 +142,7 @@ def hash_iterable(iterable, n: int = 0) -> str:
     return hash_id[0:n] if n else hash_id
 
 
-def check_base_attributes(attrs: ty.Dict):
+def check_base_attributes(attrs: dict):
     """Check attributes for missing keys."""
     if "unique_id" not in attrs:
         attrs["unique_id"] = get_short_hash()
@@ -152,7 +152,7 @@ def check_base_attributes(attrs: ty.Dict):
         attrs["date_edited"] = datetime.now().strftime(TIME_FORMAT)
 
 
-def check_data_keys(data: ty.Dict, keys: ty.List[str]):
+def check_data_keys(data: dict, keys: list[str]):
     """Check whether all keys have been defined in the data."""
     for key in keys:
         if key not in data:
@@ -160,7 +160,7 @@ def check_data_keys(data: ty.Dict, keys: ty.List[str]):
     return True
 
 
-def prettify_names(names: ty.List[str]) -> ty.List[str]:
+def prettify_names(names: list[str]) -> list[str]:
     """Prettify names by removing slashes."""
     if not isinstance(names, Iterable):
         raise ValueError("Cannot prettify list")
@@ -190,7 +190,7 @@ def check_read_mode(mode: str):
         )
 
 
-def find_case_insensitive(key: str, available_options: ty.List[str]):
+def find_case_insensitive(key: str, available_options: list[str]):
     """Find the closest match."""
     _available = [_key.lower() for _key in available_options]
     try:
@@ -211,7 +211,7 @@ def get_unique_id(path: PathLike) -> str:
 
 def display_name_contains(
     klass, filelist: ty.Iterable[PathLike], contains: str, get_first: bool = False
-) -> ty.Union[Path, ty.List[Path]]:
+) -> Path | list[Path]:
     """Return list or item which has specified display name."""
     assert hasattr(klass, "display_name"), "Class object is missing 'display_name' attribute."
     _filelist = []
@@ -232,10 +232,10 @@ def name_contains(
     filelist: ty.Iterable[PathLike],
     contains: str,
     get_first: bool = False,
-    base_dir: ty.Optional[PathLike] = None,
+    base_dir: PathLike | None = None,
     filename_only: bool = False,
     exact_match: bool = False,
-) -> ty.Union[Path, ty.List[Path]]:
+) -> Path | list[Path]:
     """Return list of items which contain specified string."""
     from pathlib import Path
 
@@ -278,7 +278,7 @@ def name_contains(
 def get_object_path(path_or_tag: PathLike, func: ty.Callable, kind: str) -> Path:
     """Return path or check whether path with tag exists."""
     if path_or_tag is None or not Path(path_or_tag).exists():
-        filelist: ty.List[Path] = func(path_or_tag)
+        filelist: list[Path] = func(path_or_tag)
         if not filelist:
             raise ValueError(f"List of '{kind}' was empty. Input={path_or_tag}")
         elif len(filelist) > 1:
@@ -298,12 +298,12 @@ def get_object_path(path_or_tag: PathLike, func: ty.Callable, kind: str) -> Path
 def optimize_chunks_along_axis(
     axis: int,
     *,
-    array: ty.Optional[np.ndarray] = None,
-    shape: ty.Optional[ty.Tuple[int, ...]] = None,
+    array: np.ndarray | None = None,
+    shape: tuple[int, ...] | None = None,
     dtype=None,
     max_size: int = 1e6,
     auto: bool = True,
-) -> ty.Optional[ty.Tuple[int, ...]]:
+) -> tuple[int, ...] | None:
     """Optimize chunk size along specified axis."""
     if array is not None:
         dtype, shape = array.dtype, array.shape
