@@ -35,7 +35,7 @@ dependencies = [
     "loguru",
     "scipy",
     "koyo",
-    "pandas<2"
+    "pandas<3"
 ]
 
 # extras
