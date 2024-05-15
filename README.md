@@ -22,9 +22,9 @@ from scipy.sparse import csr_matrix
 
 # Create a new HDF5 file
 store = Store('path/to/file.h5')
-store.add_data_to_dataset(
-    "group-1", 
-    {"data": np.random.rand(100, 100)}, 
+store.add_data_to_group(
+    "group-1",
+    {"data": np.random.rand(100, 100)},
     {"attribute": "value"},
     compression="gzip",
     chunks=(10, 10),
@@ -33,9 +33,9 @@ store.add_data_to_dataset(
 array = store.get_array("group-1", "data")
 
 # Add sparse matrix
-store.add_data_to_dataset(
-    "group-2", 
-     csr_matrix(np.random.randint(0, 255, (100, 100))),
+store.add_data_to_group(
+    "group-2",
+    csr_matrix(np.random.randint(0, 255, (100, 100))),
     {"attribute": "value"},
 )
 # Retrieve the data

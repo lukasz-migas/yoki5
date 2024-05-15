@@ -16,12 +16,18 @@ class Attributes:
         self.parent = parent
 
     def __getitem__(self, item: str) -> ty.Any:
+        """Get attribute."""
         with self.parent.open() as h5:
             return h5.attrs[item]
 
+    def __contains__(self, key: str) -> bool:
+        """Check attribute."""
+        with self.parent.open() as h5:
+            return key in h5.attrs
+
     def __setitem__(self, key: str, value: ty.Any) -> None:
-        if self.parent.mode == "r":
-            raise ValueError("Cannot save data in the `r` mode")
+        """Set attribute."""
+        self.parent.check_can_write()
         with self.parent.open() as h5:
             h5.attrs[key] = value
             h5.flush()

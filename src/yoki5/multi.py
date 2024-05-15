@@ -3,7 +3,7 @@ import typing as ty
 from contextlib import contextmanager
 from pathlib import Path
 
-from yoki5.utilities import hash_iterable
+from koyo.secret import hash_iterable
 
 if ty.TYPE_CHECKING:
     from yoki5.base import Store
@@ -17,13 +17,14 @@ class MultiStore:
         self.mode = mode
         self._validate()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Return a string representation of the"""
         return f"{self.__class__.__name__}<present={len(self._objs)}>"
 
-    def _validate(self):
+    def _validate(self) -> None:
         """Validate data."""
 
-    def _get_any(self):
+    def _get_any(self) -> ty.Any:
         """Get any available peaks object."""
         return next(iter(self._objs.keys()))
 

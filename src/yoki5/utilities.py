@@ -1,16 +1,15 @@
 """Utilities for yoki5."""
 from __future__ import annotations
 
-import hashlib
 import typing as ty
-import uuid
 from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
 
+import h5py
 import numpy as np
+from koyo.secret import get_short_hash
 from koyo.typing import PathLike
-from natsort import natsorted
 
 if ty.TYPE_CHECKING:
     import pandas as pd
@@ -43,19 +42,19 @@ def decode_str_array(array: np.ndarray | list[str], encoding: str = "utf-8") -> 
     return np.asarray(out)
 
 
-def resize_by_append_1d(h5, key: str, array: np.ndarray):
+def resize_by_append_1d(h5: h5py.Group, key: str, array: np.ndarray) -> None:
     """Resize 2D array along specified dimension."""
     h5[key].resize(h5[key].shape[0] + array.shape[0], axis=0)
     h5[key][-array.shape[0] :] = array
 
 
-def resize_by_insert_1d(h5, key: str, array: np.ndarray, indices: list[int]):
+def resize_by_insert_1d(h5: h5py.Group, key: str, array: np.ndarray, indices: list[int]) -> None:
     """Resize 2D array along specified dimension."""
     h5[key].resize(h5[key].shape[0] + len(indices), axis=0)
     h5[key][-array.shape[0] :] = array[indices]
 
 
-def resize_by_append_2d(h5, key: str, array: np.ndarray, axis: int):
+def resize_by_append_2d(h5: h5py.Group, key: str, array: np.ndarray, axis: int) -> None:
     """Resize 2D array along specified dimension."""
     if axis > 1:
         raise ValueError("Cannot resize 2d array with index larger than 1.")
@@ -66,7 +65,7 @@ def resize_by_append_2d(h5, key: str, array: np.ndarray, axis: int):
         h5[key][:, -array.shape[axis] :] = array
 
 
-def resize_by_insert_2d(h5, key: str, array: np.ndarray, axis: int, indices: list[int]):
+def resize_by_insert_2d(h5: h5py.Group, key: str, array: np.ndarray, axis: int, indices: list[int]) -> None:
     """Resize 2D array along specified dimension."""
     h5[key].resize(h5[key].shape[axis] + len(indices), axis=axis)
     for i, _index in enumerate(indices):
@@ -78,8 +77,7 @@ def df_to_buffer(df: pd.DataFrame) -> np.ndarray:
     import pickle
 
     data = pickle.dumps(df.to_dict())
-    data = np.frombuffer(data, dtype=np.uint8)
-    return data
+    return np.frombuffer(data, dtype=np.uint8)
 
 
 def buffer_to_df(buffer: np.ndarray) -> pd.DataFrame:
@@ -118,31 +116,7 @@ def dict_to_df(data: dict[str, np.ndarray]) -> pd.DataFrame:
     return df
 
 
-def get_unique_str():
-    """Gives random, unique name."""
-    return str(uuid.uuid4().hex)
-
-
-def get_short_hash(n: int = 0) -> str:
-    """Get short hash."""
-    value = get_unique_str()
-    return value[0:n] if n else value
-
-
-def hash_obj(data: ty.Iterable | list | dict | tuple | str | int | float) -> str:
-    """Hash python object."""
-    hash_id = hashlib.md5()
-    hash_id.update(repr(data).encode("utf-8"))
-    return hash_id.hexdigest()
-
-
-def hash_iterable(iterable, n: int = 0) -> str:
-    """Hash iterable object."""
-    hash_id = hash_obj(natsorted(iterable))
-    return hash_id[0:n] if n else hash_id
-
-
-def check_base_attributes(attrs: dict):
+def check_base_attributes(attrs: dict) -> None:
     """Check attributes for missing keys."""
     if "unique_id" not in attrs:
         attrs["unique_id"] = get_short_hash()
@@ -152,7 +126,7 @@ def check_base_attributes(attrs: dict):
         attrs["date_edited"] = datetime.now().strftime(TIME_FORMAT)
 
 
-def check_data_keys(data: dict, keys: list[str]):
+def check_data_keys(data: dict, keys: list[str]) -> bool:
     """Check whether all keys have been defined in the data."""
     for key in keys:
         if key not in data:
@@ -167,21 +141,21 @@ def prettify_names(names: list[str]) -> list[str]:
     return [_name.split("/")[-1] for _name in names]
 
 
-def parse_from_attribute(attribute):
+def parse_from_attribute(attribute: ty.Any) -> ty.Any:
     """Parse attribute from cache."""
     if isinstance(attribute, str) and attribute == "__NONE__":
         attribute = None
     return attribute
 
 
-def parse_to_attribute(attribute):
+def parse_to_attribute(attribute: ty.Any) -> ty.Any:
     """Parse attribute to cache."""
     if attribute is None:
         attribute = "__NONE__"
     return attribute
 
 
-def check_read_mode(mode: str):
+def check_read_mode(mode: str) -> None:
     """Check file opening mode."""
     if mode not in ["r", "a"]:
         raise ValueError(
@@ -190,7 +164,7 @@ def check_read_mode(mode: str):
         )
 
 
-def find_case_insensitive(key: str, available_options: list[str]):
+def find_case_insensitive(key: str, available_options: list[str]) -> str:
     """Find the closest match."""
     _available = [_key.lower() for _key in available_options]
     try:
@@ -205,7 +179,7 @@ def get_unique_id(path: PathLike) -> str:
     import h5py
 
     with h5py.File(path, mode="r", rdcc_nbytes=1024 * 1024 * 4) as f_ptr:
-        unique_id = f_ptr.attrs.get("unique_id")
+        unique_id = f_ptr.attrs.get("unique_id") or get_short_hash()
     return unique_id
 
 
@@ -300,8 +274,8 @@ def optimize_chunks_along_axis(
     *,
     array: np.ndarray | None = None,
     shape: tuple[int, ...] | None = None,
-    dtype=None,
-    max_size: int = 1e6,
+    dtype: ty.Any = None,
+    max_size: int = 1_000_000,
     auto: bool = True,
 ) -> tuple[int, ...] | None:
     """Optimize chunk size along specified axis."""
