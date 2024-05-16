@@ -332,13 +332,13 @@ class Store:
             value = parse_from_attribute(group_obj.attrs.get(attr, default))
             return value
 
-    def get_attrs(self, name: str, *attrs: str) -> dict[str, ty.Any]:
+    def get_attrs(self, group: str, *attrs: str) -> dict[str, ty.Any]:
         """Safely retrieve attributes."""
         with self.open("r") as h5:
             attrs_out = self._get_attrs(h5, name, *attrs)
         return attrs_out
 
-    def _get_attrs(self, h5: h5py.Group, name: str, *attrs: str) -> dict[str, ty.Any]:
+    def _get_attrs(self, h5: h5py.Group, group: str, *attrs: str) -> dict[str, ty.Any]:
         group_obj = self._get_group(h5, name)
         return {item: parse_from_attribute(group_obj.attrs.get(item)) for item in attrs}
 
@@ -368,10 +368,10 @@ class Store:
         short_names = self.get_short_names(full_names)
         return output, full_names, short_names
 
-    def get_group_attrs(self, name: str) -> dict:
+    def get_group_attrs(self, group: str) -> dict:
         """Safely retrieve all attributes in particular dataset."""
         with self.open() as h5:
-            group_obj = self._get_group(h5, name)
+            group_obj = self._get_group(h5, group)
             _attrs = self._get_group_or_dataset_attrs(group_obj)
         return _attrs
 
@@ -392,10 +392,10 @@ class Store:
             raise ValueError("Expected a 'Group' object only")
         return _attrs
 
-    def get_group_data_and_attrs(self, name: str) -> tuple[dict, dict]:
+    def get_group_data_and_attrs(self, group: str) -> tuple[dict, dict]:
         """Safely retrieve storage data."""
         with self.open() as h5:
-            group_obj = self._get_group(h5, name)
+            group_obj = self._get_group(h5, group)
             _data, _attrs = self._get_group_or_dataset_data_and_attrs(group_obj)
         return _data, _attrs
 
@@ -456,27 +456,27 @@ class Store:
         for attribute in attributes:
             self._add_attribute_to_group(h5, attribute, attributes[attribute])
 
-    def add_df(self, name: str, df: pd.DataFrame, **_kwargs: ty.Any) -> None:
+    def add_df(self, group: str, df: pd.DataFrame, **_kwargs: ty.Any) -> None:
         """Add dataframe to storage."""
         with self.open() as h5:
-            self._add_df(h5, name, df)
+            self._add_df(h5, group, df)
 
-    def _add_df(self, h5: h5py.Group, name: str, df: pd.DataFrame, **kwargs: ty.Any) -> None:
+    def _add_df(self, h5: h5py.Group, group: str, df: pd.DataFrame, **kwargs: ty.Any) -> None:
         """Add dataframe to storage."""
         import pickle
 
-        group_obj = self._add_group(h5, name)
+        group_obj = self._add_group(h5, group)
         array = pickle.dumps(df.to_dict())
         array_bytes = np.frombuffer(array, dtype=np.uint8)
         self._add_array_to_group(group_obj, "table", array_bytes, dtype=array_bytes.dtype, **kwargs)
 
-    def get_df(self, name: str) -> pd.DataFrame:
+    def get_df(self, group: str) -> pd.DataFrame:
         """Get dataframe from storage."""
         import pickle
 
         import pandas as pd
 
-        array = self.get_array(name, "table")
+        array = self.get_array(group, "table")
         return pd.DataFrame.from_dict(pickle.loads(array.tobytes()))
 
     def add_data_to_group(
@@ -495,9 +495,9 @@ class Store:
             else:
                 self._add_data_to_group(h5, group, data, attributes, dtype, **kwargs)
 
-    def get_sparse_array(self, name: str) -> csc_matrix | csr_matrix | coo_matrix:
+    def get_sparse_array(self, group: str) -> csc_matrix | csr_matrix | coo_matrix:
         """Get sparse array from the dataset."""
-        data, _, _ = self.get_group_data(name)
+        data, _, _ = self.get_group_data(group)
         if "format" not in data:
             raise ValueError("Could not parse sparse dataset!")
         fmt = data["format"]
@@ -624,19 +624,19 @@ class Store:
             ) from None
 
     @staticmethod
-    def _add_group(h5: h5py.File, name: str, flush: bool = True) -> h5py.Group | None:
+    def _add_group(h5: h5py.File, group: str, flush: bool = True) -> h5py.Group | None:
         try:
-            group_obj = h5[name]
+            group_obj = h5[group]
         except KeyError:
-            group_obj = h5.create_group(name)
+            group_obj = h5.create_group(group)
             if flush:
                 h5.flush()
         return group_obj
 
     @staticmethod
-    def _get_group(h5: h5py.Group, name: str) -> h5py.Group:
+    def _get_group(h5: h5py.Group, group: str) -> h5py.Group:
         """Get group."""
-        return h5[name]
+        return h5[group]
 
     @staticmethod
     def _add_array_to_group(

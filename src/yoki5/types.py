@@ -24,15 +24,15 @@ class H5Protocol(Protocol):
         """Get unique name by incrementing.."""
         ...
 
-    def has_data(self, *args, **kwargs):
-        """Get unique name by incrementing.."""
+    def has_any_data(self, group: str) -> bool:
+        """Get unique name by incrementing."""
         ...
 
     def add_data_to_dataset(self, *args, **kwargs):
         """Add data to group.."""
         ...
 
-    def get_group_names(self, *args, **kwargs):
+    def add_data_to_group(self, *args, **kwargs):
         """Get group names."""
         ...
 
@@ -40,11 +40,11 @@ class H5Protocol(Protocol):
         """Get dataframe."""
         ...
 
-    def get_dataset_data(self, *args, **kwargs):
+    def get_group_data(self, group: str) -> tuple[dict, list[str], list[str]]:
         """Get dataset data."""
         ...
 
-    def get_dataset_data_attrs(self, *args, **kwargs):
+    def get_group_data_and_attrs(self, *args, **kwargs):
         """Get dataset data."""
         ...
 
@@ -84,7 +84,7 @@ class H5Protocol(Protocol):
         """Get array."""
         ...
 
-    def get_dataset_attrs(self, *args, **kwargs) -> ty.Any:
+    def get_group_attrs(self, *args, **kwargs) -> ty.Any:
         """Get array."""
         ...
 
