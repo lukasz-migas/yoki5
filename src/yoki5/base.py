@@ -435,21 +435,16 @@ class Store:
         short_names = self.get_short_names(full_names)
         return full_names, short_names
 
-    def add_attribute(self, attr: str, value: ty.Any) -> None:
-        """Safely add single attribute to dataset."""
-        with self.open() as h5:
-            self._add_attribute_to_group(h5, attr, value)
-
-    def add_attributes(self, **kwargs: ty.Any) -> None:
+    def add_attribute(self, **kwargs: ty.Any) -> None:
         """Safely add attributes to storage."""
         with self.open() as h5:
             self._add_attributes_to_group(h5, kwargs)
 
-    def add_attributes_to_group(self, group: str, attributes: dict) -> None:
+    def add_attributes_to_group(self, group: str, **kwargs: ty.Any) -> None:
         """Add attributes to dataset."""
         with self.open() as h5:
             group_obj = self._add_group(h5, group)
-            self._add_attributes_to_group(group_obj, attributes)
+            self._add_attributes_to_group(group_obj, kwargs)
 
     def _add_attributes_to_group(self, h5: h5py.Group, attributes: dict) -> None:
         if attributes is None:

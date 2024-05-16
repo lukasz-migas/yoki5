@@ -98,12 +98,10 @@ def test_store_api(tmp_path):
     store.remove_array("group1", "data2")
     assert not store.has_array("group1", "data2")
     # attributes
-    store.add_attribute("attr5", 1)
-    assert store.has_attr("attr5")
-    store.add_attributes(attr6=2, attr7=1)
+    store.add_attribute(attr6=2, attr7=1)
     assert store.has_attr("attr6")
     assert store.has_attr("attr7")
-    store.add_attributes_to_group("group1", {"attr8": 1, "attr9": 2})
+    store.add_attributes_to_group("group1", attr8=1, attr9=2)
     assert store.has_attr("attr8", group="group1")
     assert store.has_attr("attr9", group="group1")
 
