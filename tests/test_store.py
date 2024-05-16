@@ -39,8 +39,8 @@ def test_store_attrs(tmp_path):
     assert "attr4" not in store.attrs
     assert store.has_attr("attr3")
     assert not store.has_attr("attr4")
-    assert store.has_attrs("attr1", "attr2")
-    assert not store.has_attrs("attr1", "attr4")
+    assert store.has_attr("attr1", "attr1")
+    assert not store.has_attr("attr1", "attr4")
 
     # parser
     attrs = store.attrs.to_dict()
@@ -65,7 +65,7 @@ def test_store_api(tmp_path):
     assert len(group_names) == 3
     assert "group1" in group_names
     assert "group2" in group_names
-    assert store.has_groups("group1", "group2", "group3")
+    assert store.has_group("group1", "group2", "group3")
     assert not store.has_group("group4")
 
     assert not store.check_missing("group1")
@@ -97,11 +97,20 @@ def test_store_api(tmp_path):
     # remove array
     store.remove_array("group1", "data2")
     assert not store.has_array("group1", "data2")
+    # attributes
+    store.add_attribute("attr5", 1)
+    assert store.has_attr("attr5")
+    store.add_attributes(attr6=2, attr7=1)
+    assert store.has_attr("attr6")
+    assert store.has_attr("attr7")
+    store.add_attributes_to_group("group1", {"attr8": 1, "attr9": 2})
+    assert store.has_attr("attr8", group="group1")
+    assert store.has_attr("attr9", group="group1")
 
     # reset group
-    assert store.has_data("group2")
+    assert store.has_any_data("group2")
     store.reset_group("group2")
-    assert not store.has_data("group2")
+    assert not store.has_any_data("group2")
 
     # add/get df
     df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
@@ -122,8 +131,8 @@ def test_store_sparse(tmp_path, fmt):
     matrix = csr_matrix(np.eye(3)).asformat(fmt)
     store.add_data_to_group("group1", matrix, as_sparse=True)
     # ensure correct attributes have been set
-    assert store.has_attr("format", "group1")
-    assert store.has_attrs("format", group="group1")
+    assert store.has_attr("format", group="group1")
+    assert store.has_attr("format", group="group1")
 
     matrix2 = store.get_sparse_array("group1")
     assert matrix2.shape == matrix.shape
@@ -140,7 +149,7 @@ def test_repack(tmp_path):
     path_to = tmp_path / "test2.h5"
     repack(path_from, path_to)
     store2 = Store(path_to)
-    assert store2.has_data("group1")
+    assert store2.has_any_data("group1")
     data, attrs = store2.get_group_data_and_attrs("group1")
     assert "data" in data
     assert "attr" in attrs

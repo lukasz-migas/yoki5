@@ -137,11 +137,6 @@ class Store:
         self.HDF5_ATTRIBUTES = self.attrs.to_dict()
         self.VERSION = self.HDF5_ATTRIBUTES.get("VERSION", "N/A")
 
-    def get_document_names(self) -> list[str]:
-        """Get list of names in the document."""
-        with self.open() as h5:
-            return list(h5.keys())
-
     def get_group_names(self, group: str | None = None, include_group: bool = False) -> list[str]:
         """Get list of group names."""
         with self.open() as h5:
@@ -161,7 +156,7 @@ class Store:
 
     def check_missing(self, *groups: str) -> list[str]:
         """Check for missing keys."""
-        present_names = self.get_document_names()
+        present_names = self.keys()
         return list(set(groups) - set(present_names))
 
     @staticmethod
@@ -206,12 +201,7 @@ class Store:
             names = list(h5.keys())
         return names
 
-    def has_group(self, group: str) -> bool:
-        """Check whether object has groups."""
-        with self.open("r") as h5:
-            return group in h5
-
-    def has_groups(self, *groups: str) -> bool:
+    def has_group(self, *groups: str) -> bool:
         """Check whether object has groups."""
         with self.open("r") as h5:
             for group in groups:
@@ -226,18 +216,7 @@ class Store:
         with self.open() as h5:
             self._add_group(h5, group)
 
-    def has_attr(self, attr: str, group: str | None = None) -> bool:
-        """Check whether specified group has an attribute."""
-        if group:
-            with self.open("r") as h5:
-                group_obj = self._get_group(h5, group)
-                attrs_obj = group_obj.attrs
-                return attr in attrs_obj
-        else:
-            attrs_obj = self.attrs
-            return attr in attrs_obj
-
-    def has_attrs(self, *attrs: str, group: str | None = None) -> bool:
+    def has_attr(self, *attrs: str, group: str | None = None) -> bool:
         """Check whether object has attributes."""
         if group:
             with self.open("r") as h5:
@@ -257,7 +236,7 @@ class Store:
             except KeyError:
                 return False
 
-    def has_data(self, group: str) -> bool:
+    def has_any_data(self, group: str) -> bool:
         """Check whether there is data in specific dataset/group."""
         with self.open("r") as h5:
             try:
@@ -461,16 +440,26 @@ class Store:
         with self.open() as h5:
             self._add_attribute_to_group(h5, attr, value)
 
-    def add_attributes(self, *args: ty.Any) -> None:
+    def add_attributes(self, **kwargs: ty.Any) -> None:
         """Safely add attributes to storage."""
         with self.open() as h5:
-            self._add_attributes_to_group(h5, *args)
+            self._add_attributes_to_group(h5, kwargs)
 
-    def add_attributes_to_group(self, name: str, attributes: dict) -> None:
+    def add_attributes_to_group(self, group: str, attributes: dict) -> None:
         """Add attributes to dataset."""
         with self.open() as h5:
-            group_obj = self._add_group(h5, name)
+            group_obj = self._add_group(h5, group)
             self._add_attributes_to_group(group_obj, attributes)
+
+    def _add_attributes_to_group(self, h5: h5py.Group, attributes: dict) -> None:
+        if attributes is None:
+            attributes = {}
+        if not isinstance(attributes, dict):
+            raise ValueError("'Attributes' must be a dictionary with key:value pairs!")
+
+        # add attributes to the group
+        for attribute in attributes:
+            self._add_attribute_to_group(h5, attribute, attributes[attribute])
 
     def add_df(self, name: str, df: pd.DataFrame, **_kwargs: ty.Any) -> None:
         """Add dataframe to storage."""
@@ -586,16 +575,6 @@ class Store:
             if key not in h5.attrs:
                 needs_attributes[key] = value
         return needs_group, needs_attributes
-
-    def _add_attributes_to_group(self, h5: h5py.Group, attributes: dict) -> None:
-        if attributes is None:
-            attributes = {}
-        if not isinstance(attributes, dict):
-            raise ValueError("'Attributes' must be a dictionary with key:value pairs!")
-
-        # add attributes to the group
-        for attribute in attributes:
-            self._add_attribute_to_group(h5, attribute, attributes[attribute])
 
     def _add_data_to_group(
         self,
