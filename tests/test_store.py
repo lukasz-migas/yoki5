@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 from scipy.sparse import csr_matrix
 from yoki5.base import Store
+from yoki5.repack import repack, repack_and_replace
 
 
 def test_store_init(tmp_path):
@@ -128,3 +129,29 @@ def test_store_sparse(tmp_path, fmt):
     assert matrix2.shape == matrix.shape
     assert np.allclose(matrix2.toarray(), matrix.toarray())
     assert matrix.format == matrix2.format
+
+
+def test_repack(tmp_path):
+    path_from = tmp_path / "test.h5"
+    store = Store(path_from, groups=["group1"])
+    store.add_data_to_group("group1", {"data": [1, 2, 3]}, attributes={"attr": "value"})
+
+    # repack
+    path_to = tmp_path / "test2.h5"
+    repack(path_from, path_to)
+    store2 = Store(path_to)
+    assert store2.has_data("group1")
+    data, attrs = store2.get_group_data_and_attrs("group1")
+    assert "data" in data
+    assert "attr" in attrs
+
+
+def test_repack_and_replace(tmp_path):
+    path_from = tmp_path / "test.h5"
+    store = Store(path_from, groups=["group1"])
+    store.add_data_to_group("group1", {"data": [1, 2, 3]}, attributes={"attr": "value"})
+
+    path_to = tmp_path / "tmp.h5"
+    repack_and_replace(path_from, path_to)
+    assert path_from.exists()
+    assert not path_to.exists()

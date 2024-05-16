@@ -1,6 +1,20 @@
 """Test storage utils"""
+import numpy as np
+import pandas as pd
 import pytest
-from yoki5.utilities import check_read_mode, prettify_names
+from yoki5.utilities import (
+    buffer_to_df,
+    check_read_mode,
+    decode_str_array,
+    df_to_buffer,
+    df_to_dict,
+    dict_to_df,
+    encode_str_array,
+    find_case_insensitive,
+    parse_from_attribute,
+    parse_to_attribute,
+    prettify_names,
+)
 
 
 @pytest.mark.parametrize(
@@ -23,3 +37,51 @@ def test_check_read_mode(mode):
 def test_check_read_mode_raise(mode):
     with pytest.raises(ValueError):
         check_read_mode(mode)
+
+
+@pytest.mark.parametrize("encoding", ["utf-8", "utf-8-sig"])
+def test_encode_str_array(encoding):
+    vals = np.asarray(["Test 1", "Test 2", "Test 3"])
+    encoded = encode_str_array(vals, encoding=encoding)
+    assert isinstance(encoded, np.ndarray)
+    decoded = decode_str_array(encoded, encoding=encoding)
+    np.testing.assert_array_equal(vals, decoded)
+
+    vals = ["Test 1", "Test 2", "Test 3"]
+    encoded = encode_str_array(vals, encoding=encoding)
+    assert isinstance(encoded, np.ndarray)
+    decoded = decode_str_array(encoded, encoding=encoding)
+    np.testing.assert_array_equal(vals, decoded)
+
+
+def test_df():
+    df = pd.DataFrame.from_dict({"a": [1, 2, 3], "b": [4, 5, 6]})
+    buffer = df_to_buffer(df)
+    assert isinstance(buffer, np.ndarray)
+    result = buffer_to_df(buffer)
+    assert isinstance(result, pd.DataFrame)
+    assert result.equals(df)
+
+
+def test_df_as_dict():
+    df = pd.DataFrame.from_dict({"a": [1, 2, 3], "b": [4, 5, 6]})
+    data = df_to_dict(df)
+    assert isinstance(data, dict)
+    result = dict_to_df(data)
+    assert isinstance(result, pd.DataFrame)
+    assert result.equals(df)
+
+
+def test_parse_attribute():
+    assert parse_to_attribute("Test") == "Test"
+    assert parse_to_attribute(None) == "__NONE__"
+    assert parse_to_attribute(1) == 1
+
+    assert parse_from_attribute(parse_to_attribute("Test")) == "Test"
+    assert parse_from_attribute(parse_to_attribute(None)) is None
+
+
+def test_find_case_insensitive():
+    options = ["Test", "Test2", "Test3"]
+    assert find_case_insensitive("test", options) == "Test"
+    assert find_case_insensitive("test2", options) == "Test2"
