@@ -10,6 +10,6 @@
     }
   ],
   "schedule": [
-    "weekly"
+    "after 9pm on the last day of the month"
   ]
 }
