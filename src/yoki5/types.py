@@ -4,10 +4,14 @@ import typing as ty
 from pathlib import Path
 
 import numpy as np
-import typing_extensions as tye
+
+try:
+    from typing import Protocol
+except ImportError:
+    from typing_extensions import Protocol
 
 
-class H5Protocol(tye.Protocol):
+class H5Protocol(Protocol):
     """Mixin class."""
 
     path: Path
@@ -89,7 +93,7 @@ class H5Protocol(tye.Protocol):
         ...
 
 
-class H5MultiProtocol(tye.Protocol):
+class H5MultiProtocol(Protocol):
     """Multi-protocol class."""
 
     _objs: ty.Dict[str, H5Protocol]
