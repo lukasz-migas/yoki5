@@ -1,4 +1,5 @@
 """Wrapper around h5py to give easier interface around complex files."""
+
 from importlib.metadata import PackageNotFoundError, version
 
 try:

@@ -1,6 +1,6 @@
 """Test mixin classes."""
+
 import numpy as np
-import pytest
 from yoki5.base import Store
 from yoki5.mixins import ColorMixin, DisplayMixin
 

@@ -335,11 +335,11 @@ class Store:
     def get_attrs(self, group: str, *attrs: str) -> dict[str, ty.Any]:
         """Safely retrieve attributes."""
         with self.open("r") as h5:
-            attrs_out = self._get_attrs(h5, name, *attrs)
+            attrs_out = self._get_attrs(h5, group, *attrs)
         return attrs_out
 
     def _get_attrs(self, h5: h5py.Group, group: str, *attrs: str) -> dict[str, ty.Any]:
-        group_obj = self._get_group(h5, name)
+        group_obj = self._get_group(h5, group)
         return {item: parse_from_attribute(group_obj.attrs.get(item)) for item in attrs}
 
     def _get_group_or_dataset_data(

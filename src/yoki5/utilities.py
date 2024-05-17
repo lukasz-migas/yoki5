@@ -1,4 +1,5 @@
 """Utilities for yoki5."""
+
 from __future__ import annotations
 
 import typing as ty
@@ -170,7 +171,7 @@ def find_case_insensitive(key: str, available_options: list[str]) -> str:
     try:
         index = _available.index(key.lower())
     except IndexError:
-        raise KeyError("Could not retrieve item.")
+        raise KeyError("Could not retrieve item.") from None
     return available_options[index]
 
 

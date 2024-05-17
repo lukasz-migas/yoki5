@@ -1,4 +1,5 @@
 """Wrapper around multiple stores."""
+
 import typing as ty
 from contextlib import contextmanager
 from pathlib import Path
@@ -18,7 +19,7 @@ class MultiStore:
         self._validate()
 
     def __repr__(self) -> str:
-        """Return a string representation of the"""
+        """Return a string representation of the."""
         return f"{self.__class__.__name__}<present={len(self._objs)}>"
 
     def _validate(self) -> None:

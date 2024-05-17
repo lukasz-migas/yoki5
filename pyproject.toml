@@ -110,6 +110,7 @@ extend-ignore = [
     "D401", # First line should be in imperative mood
     "D413", # Missing blank line after last section
     "D416", # Section name should end with a colon
+    "C901", # Function is too complex
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -131,7 +132,7 @@ strict = true
 disallow_any_generics = false
 disallow_subclassing_any = false
 show_error_codes = true
-pretty = true
+pretty = false
 
 # # module specific overrides
 # [[tool.mypy.overrides]]
@@ -151,7 +152,7 @@ exclude_lines = [
 ]
 
 [tool.coverage.run]
-source = ["src"]
+source = ["yoki5"]
 
 # https://github.com/mgedmin/check-manifest#configuration
 [tool.check-manifest]
@@ -175,14 +176,3 @@ changelog_sections = "feature,fix,breaking,documentation,performance,chore,:boom
 # commit_parser=semantic_release.history.angular_parser
 build_command = "pip install build && python -m build"
 
-# # for things that require compilation
-# # https://cibuildwheel.readthedocs.io/en/stable/options/
-# [tool.cibuildwheel]
-# # Skip 32-bit builds & PyPy wheels on all platforms
-# skip = ["*-manylinux_i686", "*-musllinux_i686", "*-win32", "pp*"]
-# test-extras = ["test"]
-# test-command = "pytest {project}/tests -v"
-# test-skip = "*-musllinux*"
-
-# [tool.cibuildwheel.environment]
-# HATCH_BUILD_HOOKS_ENABLE = "1"
