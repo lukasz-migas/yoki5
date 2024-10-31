@@ -252,6 +252,8 @@ def name_contains(
 
 def get_object_path(path_or_tag: PathLike, func: ty.Callable, kind: str) -> Path:
     """Return path or check whether path with tag exists."""
+    if isinstance(path_or_tag, list):
+        raise ValueError("List of paths is not supported.")
     if path_or_tag is None or not Path(path_or_tag).exists() or not Path(path_or_tag).is_file():
         filelist: list[Path] = func(path_or_tag)
         if not filelist:
