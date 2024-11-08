@@ -261,7 +261,7 @@ def get_object_path(path_or_tag: PathLike, func: ty.Callable, kind: str) -> Path
         elif len(filelist) > 1:
             # if by any chance the selected paths end with the specified tag, let's pick it
             for path in filelist:
-                if path.stem.endswith(path_or_tag):
+                if path.stem.endswith(str(path_or_tag)):
                     return path
             filelist_str = "\n".join(map(str, filelist))
             raise ValueError(f"List of '{kind}' had more than one entry. Input={path_or_tag}. Entries=\n{filelist_str}")
