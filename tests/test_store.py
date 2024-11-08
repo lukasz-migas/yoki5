@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from scipy.sparse import csr_matrix
+
 from yoki5.base import Store
 from yoki5.repack import repack, repack_and_replace
 
@@ -162,3 +163,12 @@ def test_repack_and_replace(tmp_path):
     repack_and_replace(path_from, path_to)
     assert path_from.exists()
     assert not path_to.exists()
+
+
+def test_repack_and_replace_no_tmp(tmp_path):
+    path_from = tmp_path / "test.h5"
+    store = Store(path_from, groups=["group1"])
+    store.add_data_to_group("group1", {"data": [1, 2, 3]}, attributes={"attr": "value"})
+
+    repack_and_replace(path_from)
+    assert path_from.exists()

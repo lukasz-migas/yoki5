@@ -14,7 +14,7 @@ class MultiStore:
     """Base class for multi-dataset wrappers."""
 
     def __init__(self, mode: str = "a"):
-        self._objs: ty.Dict[str, "Store"] = {}
+        self._objs: ty.Dict[str, Store] = {}
         self.mode = mode
         self._validate()
 
@@ -31,6 +31,9 @@ class MultiStore:
 
     def _get_any_obj(self):
         return self._objs[self._get_any()]
+
+    def _get_obj(self, name: str):
+        return self._objs[name]
 
     def _obj_iter(self):
         yield from self._objs.values()

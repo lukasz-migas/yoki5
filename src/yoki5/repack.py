@@ -1,5 +1,7 @@
 """Repack existing file to a new file."""
 
+from __future__ import annotations
+
 from pathlib import Path
 
 import h5py
@@ -34,9 +36,12 @@ def repack(path_from: PathLike, path_to: PathLike) -> None:
                 to_f.attrs[key] = from_f.attrs[key]
 
 
-def repack_and_replace(path_from: PathLike, path_to: PathLike) -> None:
+def repack_and_replace(path_from: PathLike, path_to: PathLike | None = None) -> None:
     """Repack an existing file to a new file and replace the original file with the new one."""
     path_from = Path(path_from)
+    if path_to is None:
+        path_to = path_from.with_suffix(".tmp" + path_from.suffix)
+
     path_to = Path(path_to)
     repack(path_from, path_to)
     # remove file from disk
