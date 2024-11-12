@@ -232,7 +232,10 @@ def name_contains(
         return filelist
 
     if Path(contains).is_file() and Path(contains).exists():
-        return Path(contains)
+        path = Path(contains)
+        if get_first:
+            return path
+        return [path]
 
     filelist_ = []
     contains = contains.lower()
