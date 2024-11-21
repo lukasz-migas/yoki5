@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from koyo.secret import hash_iterable
+from natsort import natsorted
 
 if ty.TYPE_CHECKING:
     from yoki5.base import Store
@@ -35,16 +36,24 @@ class MultiStore:
     def _get_obj(self, name: str):
         return self._objs[name]
 
-    def _obj_iter(self):
-        yield from self._objs.values()
+    def _obj_iter(self, sort: bool = False):
+        names = list(self._objs.keys())
+        if sort:
+            names = natsorted(names)
+        for name in names:
+            yield self._objs[name]
 
-    def name_obj_iter(self):
+    def name_obj_iter(self, sort: bool = False):
         """Iterator."""
-        yield from self._objs.items()
+        names = list(self._objs.keys())
+        if sort:
+            names = natsorted(names)
+        for name in names:
+            yield name, self._objs[name]
 
-    def _path_iter(self) -> ty.Iterable[Path]:
+    def _path_iter(self, sort: bool = False) -> ty.Iterable[Path]:
         """Iterator of object paths."""
-        for obj in self._objs.values():
+        for obj in self._obj_iter(sort):
             yield Path(obj.path)
 
     def can_write(self) -> bool:
