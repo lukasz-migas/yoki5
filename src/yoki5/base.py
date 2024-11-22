@@ -274,6 +274,12 @@ class Store:
             group_obj = self._get_group(h5, group)
             return group_obj[name][:]  # type: ignore[no-any-return]
 
+    def get_names(self, group: str) -> list[str]:
+        """Get list of names."""
+        with self.open("r") as h5:
+            group_obj = self._get_group(h5, group)
+            return list(group_obj.keys())
+
     def get_arrays(self, group: str, *names: str) -> list[np.ndarray]:
         """Safely retrieve multiple arrays."""
         with self.open("r") as h5:
@@ -303,6 +309,14 @@ class Store:
         with self.open() as h5:
             group_obj = self._get_group(h5, group)
             del group_obj[name]
+
+    def remove_arrays(self, group: str, *names: str)-> None:
+        """Remove arrays from the store within the same group."""
+        self.check_can_write()
+        with self.open() as h5:
+            group_obj = self._get_group(h5, group)
+            for name in names:
+                del group_obj[name]
 
     def get_group_data_and_attrs_for_keys(
         self, group: str, names: list[str] | None = None, attrs: list[str] | None = None
