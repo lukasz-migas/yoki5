@@ -310,7 +310,7 @@ class Store:
             group_obj = self._get_group(h5, group)
             del group_obj[name]
 
-    def remove_arrays(self, group: str, *names: str)-> None:
+    def remove_arrays(self, group: str, *names: str) -> None:
         """Remove arrays from the store within the same group."""
         self.check_can_write()
         with self.open() as h5:
