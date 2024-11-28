@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import typing as ty
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from datetime import datetime
 from pathlib import Path
 
@@ -261,11 +261,11 @@ class Store:
                     attrs_miss.append(attr)
         return not data_miss and not attrs_miss
 
-    def get_group_data(self, group: str) -> tuple[dict, list[str], list[str]]:
+    def get_group_data(self, group: str, inner: bool = True) -> tuple[dict, list[str], list[str]]:
         """Safely retrieve storage data."""
         with self.open("r") as h5:
             group_obj = self._get_group(h5, group)
-            output, full_names, short_names = self._get_group_or_dataset_data(group_obj)
+            output, full_names, short_names = self._get_group_or_dataset_data(group_obj, inner=inner)
         return output, full_names, short_names
 
     def get_array(self, group: str, name: str) -> np.ndarray:
@@ -285,6 +285,12 @@ class Store:
         with self.open("r") as h5:
             group_obj = self._get_group(h5, group)
             return [group_obj[name][:] for name in names]
+
+    def remove_group(self, group: str) -> None:
+        """Remove group from store."""
+        self.check_can_write()
+        with self.open() as h5:
+            self._remove_group(h5, group)
 
     def set_array(self, group: str, name: str, array: np.ndarray, dtype: ty.Any = None, **kwargs: ty.Any) -> None:
         """Set array for particular key."""
@@ -357,7 +363,7 @@ class Store:
         return {item: parse_from_attribute(group_obj.attrs.get(item)) for item in attrs}
 
     def _get_group_or_dataset_data(
-        self, group_or_dataset: h5py.Group | h5py.Dataset
+        self, group_or_dataset: h5py.Group | h5py.Dataset, inner: bool = True
     ) -> tuple[dict, list[str], list[str]]:
         """Retrieve storage data."""
         output = {}
@@ -367,7 +373,7 @@ class Store:
         if isinstance(group_or_dataset, h5py.Group):
             # iterate over each chunk
             for group, group_obj in group_or_dataset.items():
-                if isinstance(group_obj, h5py.Group):
+                if isinstance(group_obj, h5py.Group) and inner:
                     output[group] = self._get_group_data_with_attrs(group_obj)
                     full_names.append(group_obj.name)
                 # check if the object is a storage
@@ -735,15 +741,11 @@ class Store:
     def _get_group_data_with_attrs(group: h5py.Group) -> dict:
         data = {}
         for obj_name in group:
-            try:
+            with suppress(TypeError):
                 data[obj_name] = group[obj_name][()]
-            except TypeError:
-                logger.error(f"Failed to load data '{obj_name}'")
         for obj_name in group.attrs:
-            try:
+            with suppress(TypeError):
                 data[obj_name] = parse_from_attribute(group.attrs[obj_name])
-            except TypeError:
-                logger.error(f"Failed to load attribute '{obj_name}'")
         return data
 
     @staticmethod
