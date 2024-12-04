@@ -600,8 +600,8 @@ class Store:
         dtype: ty.Any = None,
         **kwargs: ty.Any,
     ) -> None:
-        if "/" not in name and name not in self.HDF5_GROUPS:
-            logger.warning(f"Group {name} not in {self.HDF5_GROUPS}...")
+        # if "/" not in name and name not in self.HDF5_GROUPS:
+        #     logger.warning(f"Group {name} not in {self.HDF5_GROUPS}...")
 
         if attributes is None:
             attributes = {}
