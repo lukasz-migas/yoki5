@@ -217,6 +217,8 @@ def name_contains(
     if contains is None:
         contains = ""
     contains = str(contains)
+
+    # check if contains is a wildcard
     if "*" in contains and base_dir:
         # make sure contains has HDF5 extension
         if not contains.endswith(".h5"):
@@ -231,6 +233,7 @@ def name_contains(
             return filelist[0]
         return filelist
 
+    # check if contains is a file
     if Path(contains).is_file() and Path(contains).exists():
         path = Path(contains)
         if get_first:
