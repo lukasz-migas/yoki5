@@ -23,6 +23,11 @@ class MultiStore:
         """Return a string representation of the."""
         return f"{self.__class__.__name__}<present={len(self._objs)}>"
 
+    @property
+    def n_objects(self) -> int:
+        """Return number of objects."""
+        return len(self._objs)
+
     def _validate(self) -> None:
         """Validate data."""
 
