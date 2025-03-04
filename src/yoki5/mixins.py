@@ -29,6 +29,18 @@ class DisplayMixin(H5Protocol):
     DISPLAY_NAME_KEY = "Metadata"
 
     @property
+    def name(self) -> str:
+        """Retrieve alternative registration name based on the image path."""
+        if self.has_group(self.DISPLAY_NAME_KEY):
+            return self.get_attr(self.DISPLAY_NAME_KEY, "name", "")
+        return ""
+
+    @name.setter
+    def name(self, value: str):
+        self.check_can_write()
+        self.set_attr(self.DISPLAY_NAME_KEY, "name", value)
+
+    @property
     def display_name(self) -> str:
         """Retrieve alternative registration name based on the image path."""
         if self.has_group(self.DISPLAY_NAME_KEY):
