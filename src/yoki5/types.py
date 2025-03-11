@@ -90,8 +90,8 @@ class H5Protocol(Protocol):
         """Get array."""
         ...
 
-    def get_group_attrs(self, *args, **kwargs) -> ty.Any:
-        """Get array."""
+    def get_group_attrs(self, *args, **kwargs) -> dict:
+        """Get group attributes."""
         ...
 
     def has_group(self, *groups: str) -> bool:
