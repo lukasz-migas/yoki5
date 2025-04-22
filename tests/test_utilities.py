@@ -3,13 +3,11 @@
 import numpy as np
 import pandas as pd
 import pytest
+
+from yoki5._pandas import HAS_PANDAS, buffer_to_df, df_to_buffer, df_to_dict, dict_to_df
 from yoki5.utilities import (
-    buffer_to_df,
     check_read_mode,
     decode_str_array,
-    df_to_buffer,
-    df_to_dict,
-    dict_to_df,
     encode_str_array,
     find_case_insensitive,
     parse_from_attribute,
@@ -55,6 +53,7 @@ def test_encode_str_array(encoding):
     np.testing.assert_array_equal(vals, decoded)
 
 
+@pytest.mark.skipif(not HAS_PANDAS, reason="Pandas not installed")
 def test_df():
     df = pd.DataFrame.from_dict({"a": [1, 2, 3], "b": [4, 5, 6]})
     buffer = df_to_buffer(df)
@@ -64,6 +63,7 @@ def test_df():
     assert result.equals(df)
 
 
+@pytest.mark.skipif(not HAS_PANDAS, reason="Pandas not installed")
 def test_df_as_dict():
     df = pd.DataFrame.from_dict({"a": [1, 2, 3], "b": [4, 5, 6]})
     data = df_to_dict(df)

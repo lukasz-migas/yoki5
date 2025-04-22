@@ -12,9 +12,6 @@ import numpy as np
 from koyo.secret import get_short_hash
 from koyo.typing import PathLike
 
-if ty.TYPE_CHECKING:
-    import pandas as pd
-
 TIME_FORMAT = "%d/%m/%Y-%H:%M:%S:%f"
 
 
@@ -71,50 +68,6 @@ def resize_by_insert_2d(h5: h5py.Group, key: str, array: np.ndarray, axis: int, 
     h5[key].resize(h5[key].shape[axis] + len(indices), axis=axis)
     for i, _index in enumerate(indices):
         h5[key][:, -len(indices) + i] = array
-
-
-def df_to_buffer(df: pd.DataFrame) -> np.ndarray:
-    """Turn pandas dataframe into a buffer."""
-    import pickle
-
-    data = pickle.dumps(df.to_dict())
-    return np.frombuffer(data, dtype=np.uint8)
-
-
-def buffer_to_df(buffer: np.ndarray) -> pd.DataFrame:
-    """Turn buffer into pandas dataframe."""
-    import pickle
-
-    import pandas as pd
-
-    data = pickle.loads(buffer.tobytes())
-    return pd.DataFrame.from_dict(data)
-
-
-def df_to_dict(df: pd.DataFrame) -> dict[str, np.ndarray]:
-    """Convert pandas dataframe to dict with arrays."""
-    return {
-        "columns": df.columns.to_numpy(dtype="S"),
-        "index": df.index.to_numpy(),
-        "data": df.to_numpy(),
-        "dtypes": df.dtypes.to_numpy().astype("S"),
-    }
-
-
-def dict_to_df(data: dict[str, np.ndarray]) -> pd.DataFrame:
-    """Convert dict to pandas dataframe."""
-    import pandas as pd
-
-    columns = data["columns"].astype("str")
-
-    df = pd.DataFrame(
-        columns=columns,
-        index=data["index"],
-        data=data["data"],
-    )
-    for col, dtype in zip(columns, data["dtypes"].astype("str")):
-        df[col] = df[col].astype(dtype)
-    return df
 
 
 def check_base_attributes(attrs: dict) -> None:

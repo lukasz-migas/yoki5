@@ -5,6 +5,7 @@ import pandas as pd
 import pytest
 from scipy.sparse import csr_matrix
 
+from yoki5._pandas import HAS_PANDAS
 from yoki5.base import Store
 from yoki5.repack import repack, repack_and_replace
 
@@ -110,6 +111,12 @@ def test_store_api(tmp_path):
     assert store.has_any_data("group2")
     store.reset_group("group2")
     assert not store.has_any_data("group2")
+
+
+@pytest.mark.skipif(not HAS_PANDAS, reason="Pandas not installed")
+def test_store_api_dataframe(tmp_path):
+    path = tmp_path / "test.h5"
+    store = Store(path, groups=["group1", "group2", "group3"])
 
     # add/get df
     df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})

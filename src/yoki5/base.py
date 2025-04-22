@@ -14,6 +14,7 @@ from loguru import logger
 from natsort import natsorted
 from scipy.sparse import coo_matrix, csc_matrix, csr_matrix, issparse, spmatrix
 
+from yoki5._pandas import HAS_PANDAS, check_pandas, pd
 from yoki5.attrs import Attributes
 from yoki5.utilities import (
     TIME_FORMAT,
@@ -22,9 +23,6 @@ from yoki5.utilities import (
     parse_from_attribute,
     parse_to_attribute,
 )
-
-if ty.TYPE_CHECKING:
-    import pandas as pd
 
 # Local globals
 RECOGNIZED_MODES = ["a", "r", "r+", "w"]
@@ -476,29 +474,6 @@ class Store:
         for attribute in attributes:
             self._add_attribute_to_group(h5, attribute, attributes[attribute])
 
-    def add_df(self, group: str, df: pd.DataFrame, **_kwargs: ty.Any) -> None:
-        """Add dataframe to storage."""
-        with self.open() as h5:
-            self._add_df(h5, group, df)
-
-    def _add_df(self, h5: h5py.Group, group: str, df: pd.DataFrame, **kwargs: ty.Any) -> None:
-        """Add dataframe to storage."""
-        import pickle
-
-        group_obj = self._add_group(h5, group)
-        array = pickle.dumps(df.to_dict())
-        array_bytes = np.frombuffer(array, dtype=np.uint8)
-        self._add_array_to_group(group_obj, "table", array_bytes, dtype=array_bytes.dtype, **kwargs)
-
-    def get_df(self, group: str) -> pd.DataFrame:
-        """Get dataframe from storage."""
-        import pickle
-
-        import pandas as pd
-
-        array = self.get_array(group, "table")
-        return pd.DataFrame.from_dict(pickle.loads(array.tobytes()))
-
     def add_data_to_group(
         self,
         group: str,
@@ -640,7 +615,7 @@ class Store:
             h5.attrs[attr] = parse_to_attribute(value)
         except TypeError:
             raise TypeError(
-                f"Object dtype {type(value)} does not have native HDF5 equivalent. (key={attr};" f" value={value})"
+                f"Object dtype {type(value)} does not have native HDF5 equivalent. (key={attr}; value={value})"
             ) from None
 
     @staticmethod
@@ -765,3 +740,40 @@ class Store:
             pass
         if flush:
             h5.flush()
+
+    if HAS_PANDAS:
+
+        def add_df(self, group: str, df: pd.DataFrame, **_kwargs: ty.Any) -> None:
+            """Add dataframe to storage."""
+            with self.open() as h5:
+                self._add_df(h5, group, df)
+
+        def _add_df(self, h5: h5py.Group, group: str, df: pd.DataFrame, **kwargs: ty.Any) -> None:
+            """Add dataframe to storage."""
+            import pickle
+
+            group_obj = self._add_group(h5, group)
+            array = pickle.dumps(df.to_dict())
+            array_bytes = np.frombuffer(array, dtype=np.uint8)
+            self._add_array_to_group(group_obj, "table", array_bytes, dtype=array_bytes.dtype, **kwargs)
+
+        def get_df(self, group: str) -> pd.DataFrame:
+            """Get dataframe from storage."""
+            import pickle
+
+            array = self.get_array(group, "table")
+            return pd.DataFrame.from_dict(pickle.loads(array.tobytes()))
+
+    else:
+
+        def add_df(self, group: str, df: pd.DataFrame, **_kwargs: ty.Any) -> None:
+            """Add dataframe to storage."""
+            check_pandas()
+
+        def _add_df(self, h5: h5py.Group, group: str, df: pd.DataFrame, **kwargs: ty.Any) -> None:
+            """Add dataframe to storage."""
+            check_pandas()
+
+        def get_df(self, group: str) -> pd.DataFrame:
+            """Get dataframe from storage."""
+            check_pandas()

@@ -35,13 +35,16 @@ dependencies = [
     "loguru",
     "scipy",
     "koyo",
-    "pandas<2"
 ]
 
 # extras
 # https://peps.python.org/pep-0621/#dependencies-optional-dependencies
 [project.optional-dependencies]
-test = ["pytest>=6.0", "pytest-cov"]
+df = ["pandas"]
+all = [
+    "yoki5[df]",
+]
+test = ["pytest>=6.0", "pytest-cov", "yoki[all]"]
 dev = [
     "black",
     "ipython",
