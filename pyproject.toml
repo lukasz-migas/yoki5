@@ -146,6 +146,7 @@ source = ["yoki5"]
 ignore = [
     ".github_changelog_generator",
     ".pre-commit-config.yaml",
+    ".ruff_cache/**/*",
     "setup.py",
     "tests/**/*",
     ".idea/**/*",
@@ -154,4 +155,5 @@ ignore = [
     "renovate.json",
     "codecov.yml",
     ".ruff_cache/**/*",
+    "MANIFEST.in"
 ]
