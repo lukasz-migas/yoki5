@@ -45,7 +45,6 @@ df = ["pandas"]
 all = ["yoki5[df]"]
 test = ["pytest>=6.0", "pytest-cov", "yoki[all]"]
 dev = [
-    "black",
     "ipython",
     "mypy",
     "pdbpp",
