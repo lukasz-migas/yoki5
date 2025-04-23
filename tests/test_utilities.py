@@ -1,7 +1,6 @@
 """Test storage utils"""
 
 import numpy as np
-import pandas as pd
 import pytest
 
 from yoki5._pandas import HAS_PANDAS, buffer_to_df, df_to_buffer, df_to_dict, dict_to_df
@@ -55,6 +54,8 @@ def test_encode_str_array(encoding):
 
 @pytest.mark.skipif(not HAS_PANDAS, reason="Pandas not installed")
 def test_df():
+    import pandas as pd
+
     df = pd.DataFrame.from_dict({"a": [1, 2, 3], "b": [4, 5, 6]})
     buffer = df_to_buffer(df)
     assert isinstance(buffer, np.ndarray)
@@ -65,6 +66,8 @@ def test_df():
 
 @pytest.mark.skipif(not HAS_PANDAS, reason="Pandas not installed")
 def test_df_as_dict():
+    import pandas as pd
+
     df = pd.DataFrame.from_dict({"a": [1, 2, 3], "b": [4, 5, 6]})
     data = df_to_dict(df)
     assert isinstance(data, dict)

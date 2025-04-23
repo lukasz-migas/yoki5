@@ -1,7 +1,6 @@
 """Test store class."""
 
 import numpy as np
-import pandas as pd
 import pytest
 from scipy.sparse import csr_matrix
 
@@ -115,6 +114,8 @@ def test_store_api(tmp_path):
 
 @pytest.mark.skipif(not HAS_PANDAS, reason="Pandas not installed")
 def test_store_api_dataframe(tmp_path):
+    import pandas as pd
+
     path = tmp_path / "test.h5"
     store = Store(path, groups=["group1", "group2", "group3"])
 
