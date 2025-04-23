@@ -2,6 +2,12 @@
 requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "CHANGELOG.md"]
+
 # https://peps.python.org/pep-0621/
 [project]
 name = "yoki5"
@@ -36,9 +42,7 @@ dependencies = [
 # https://peps.python.org/pep-0621/#dependencies-optional-dependencies
 [project.optional-dependencies]
 df = ["pandas"]
-all = [
-    "yoki5[df]",
-]
+all = ["yoki5[df]"]
 test = ["pytest>=6.0", "pytest-cov", "yoki[all]"]
 dev = [
     "black",
@@ -55,12 +59,6 @@ dev = [
 homepage = "https://github.com/lukasz-migas/yoki5"
 repository = "https://github.com/lukasz-migas/yoki5"
 
-
-[tool.hatch.version]
-source = "vcs"
-
-[tool.hatch.build.targets.sdist]
-include = ["src", "tests", "CHANGELOG.md"]
 
 # https://github.com/charliermarsh/ruff
 [tool.ruff]
