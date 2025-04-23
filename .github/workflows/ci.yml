@@ -54,6 +54,7 @@ jobs:
     if: always()
     needs: [test]
     uses: pyapp-kit/workflows/.github/workflows/upload-coverage.yml@v2
+    secrets: inherit
 #    secrets:
 #      codecov_token: ${{ secrets.CODECOV_TOKEN }}
 

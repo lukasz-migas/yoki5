@@ -1,11 +1,6 @@
 [build-system]
-requires = [
-  "setuptools >= 42",
-  "wheel",
-  "build",
-  "setuptools_scm[toml]>=3.4"
-]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
 # https://peps.python.org/pep-0621/
 [project]
@@ -60,29 +55,18 @@ dev = [
 homepage = "https://github.com/lukasz-migas/yoki5"
 repository = "https://github.com/lukasz-migas/yoki5"
 
-# same as console_scripts entry point
-# [project.scripts]
-# spam-cli = "spam:main_cli"
 
-# Entry points
-# https://peps.python.org/pep-0621/#entry-points
-# [project.entry-points."spam.magical"]
-# tomatoes = "spam:main_tomatoes"
+[tool.hatch.version]
+source = "vcs"
 
-[tool.setuptools_scm]
-write_to = "src/yoki5/_version.py"
-
-# https://github.com/psf/black
-[tool.black]
-line-length = 120
-target-version = ['py37', 'py38', 'py39']
-include = '\.pyi?$'
-
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "CHANGELOG.md"]
 
 # https://github.com/charliermarsh/ruff
 [tool.ruff]
 line-length = 120
-target-version = "py38"
+target-version = "py39"
+src = ["src", "tests"]
 
 [tool.ruff.lint]
 # https://beta.ruff.rs/docs/rules/
@@ -130,7 +114,7 @@ filterwarnings = [
 
 # https://mypy.readthedocs.io/en/stable/config_file.html
 [tool.mypy]
-files = "src/**/"
+files = "src/**/*.py"
 strict = true
 disallow_any_generics = false
 disallow_subclassing_any = false
@@ -162,20 +146,12 @@ source = ["yoki5"]
 ignore = [
     ".github_changelog_generator",
     ".pre-commit-config.yaml",
-    ".ruff_cache/**/*",
     "setup.py",
     "tests/**/*",
     ".idea/**/*",
     "_version.py",
     "Makefile",
-    "renovate.json"
+    "renovate.json",
+    "codecov.yml",
+    ".ruff_cache/**/*",
 ]
-
-# https://python-semantic-release.readthedocs.io/en/latest/configuration.html
-[tool.semantic_release]
-version_source = "tag_only"
-branch = "main"
-changelog_sections = "feature,fix,breaking,documentation,performance,chore,:boom:,:sparkles:,:children_crossing:,:lipstick:,:iphone:,:egg:,:chart_with_upwards_trend:,:ambulance:,:lock:,:bug:,:zap:,:goal_net:,:alien:,:wheelchair:,:speech_balloon:,:mag:,:apple:,:penguin:,:checkered_flag:,:robot:,:green_apple:,Other"
-# commit_parser=semantic_release.history.angular_parser
-build_command = "pip install build && python -m build"
-
