@@ -58,13 +58,20 @@ except ImportError:
         def __getattr__(self, item):
             check_pandas()
 
-    def df_to_buffer(*args) -> None:
+    def df_to_buffer(df: pd.DataFrame) -> np.ndarray:
+        """Turn pandas dataframe into a buffer."""
         check_pandas()
 
-    def df_to_dict(*args) -> None:
+    def buffer_to_df(buffer: np.ndarray) -> pd.DataFrame:
+        """Turn buffer into pandas dataframe."""
         check_pandas()
 
-    def dict_to_df(*args) -> None:
+    def df_to_dict(df: pd.DataFrame) -> dict[str, np.ndarray]:
+        """Convert pandas dataframe to dict with arrays."""
+        check_pandas()
+
+    def dict_to_df(data: dict[str, np.ndarray]) -> pd.DataFrame:
+        """Convert dict to pandas dataframe."""
         check_pandas()
 
 
