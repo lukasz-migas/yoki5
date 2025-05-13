@@ -261,3 +261,23 @@ def optimize_chunks_along_axis(
     if n < 1:
         n = 1
     return (shape[0], n) if axis == 0 else (n, shape[1])
+
+
+def add_array(h5: h5py.File, group: str, name: str, array: np.ndarray) -> None:
+    """Add an array to group."""
+    try:
+        group_obj = h5[group]
+    except KeyError:
+        group_obj = h5.create_group(group)
+    try:
+        group_obj.create_dataset(
+            name,
+            data=array,
+            dtype=array.dtype,
+            shape=array.shape,
+        )
+    except ValueError:
+        raise ValueError(
+            f"Dataset {name} already exists in group {group}."
+            f" Please use a different name or delete the existing dataset."
+        ) from None
