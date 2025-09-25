@@ -641,7 +641,7 @@ class Store:
         dtype: ty.Any,
         chunks: tuple | None = None,
         maxshape: tuple | None = None,
-        compression: dict | None = None,
+        compression: str | int | None = None,
         compression_opts: dict | None = None,
         shape: tuple | None = None,
     ) -> None:
@@ -654,6 +654,9 @@ class Store:
         if shape is None:
             if hasattr(data, "shape"):
                 shape = data.shape
+        if isinstance(compression, dict):
+            compression_opts = compression.get("compression_opts", None)
+            compression = compression.get("compression", None)
 
         if name in list(h5.keys()):
             if h5[name].dtype == dtype:
