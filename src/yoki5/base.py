@@ -339,7 +339,7 @@ class Store:
     def set_attr(self, group: str, attr: str, value: str | int | float | bool) -> None:
         """Set attribute value."""
         with self.open(self.mode) as h5:
-            group_obj = self._get_group(h5, group)
+            group_obj = self._add_group(h5, group)
             group_obj.attrs[attr] = parse_to_attribute(value)
             self._flush(h5)
 
