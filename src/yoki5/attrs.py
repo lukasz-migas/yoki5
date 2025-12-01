@@ -43,6 +43,6 @@ class Attributes:
 
     def get(self, key: str, default: ty.Any = None) -> ty.Any:
         """Get attribute if it exists."""
-        with suppress(KeyError):
+        with suppress(KeyError, PermissionError):
             return self[key]
         return default
