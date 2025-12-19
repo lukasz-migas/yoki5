@@ -210,13 +210,13 @@ def name_contains(
 
 
 def get_object_path(path_or_tag: PathLike, func: ty.Callable, kind: str) -> Path:
-    """Return path or check whether path with tag exists."""
+    """Return a path or check whether a path with the tag exists."""
     if isinstance(path_or_tag, list):
         raise ValueError("List of paths is not supported.")
     if path_or_tag is None or not Path(path_or_tag).exists() or not Path(path_or_tag).is_file():
         filelist: list[Path] = func(path_or_tag)
         if not filelist:
-            raise ValueError(f"List of '{kind}' was empty. Input={path_or_tag}")
+            raise ValueError(f"List of '{kind}' was empty. Input={path_or_tag}; Func={func}")
         elif len(filelist) > 1:
             # if by any chance the selected paths end with the specified tag, let's pick it
             for path in filelist:
