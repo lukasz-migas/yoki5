@@ -129,7 +129,7 @@ def find_case_insensitive(key: str, available_options: list[str]) -> str:
 
 
 def get_unique_id(path: PathLike) -> str:
-    """Get unique ID from path."""
+    """Get unique ID from the path."""
     import h5py
 
     with h5py.File(path, mode="r", rdcc_nbytes=1024 * 1024 * 4) as f_ptr:
@@ -138,19 +138,26 @@ def get_unique_id(path: PathLike) -> str:
 
 
 def display_name_contains(
-    klass, filelist: ty.Iterable[PathLike], contains: str, get_first: bool = False
+    klass,
+    filelist: ty.Iterable[PathLike],
+    contains: str,
+    get_first: bool = False,
+    quick: bool = False,
+    **kwargs: ty.Any,
 ) -> Path | list[Path]:
     """Return list or item which has specified display name."""
     assert hasattr(klass, "display_name"), "Class object is missing 'display_name' attribute."
     _filelist = []
     for file in filelist:
-        obj = klass(file)
+        obj = klass(file, **kwargs)
         if get_first:
             if contains == obj.display_name:
                 _filelist.append(file)
         else:
             if contains in obj.display_name:
                 _filelist.append(file)
+        if quick and _filelist:
+            break
     if get_first and _filelist:
         return _filelist[0]
     return _filelist
