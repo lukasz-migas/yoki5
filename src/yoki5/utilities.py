@@ -82,10 +82,7 @@ def check_base_attributes(attrs: dict) -> None:
 
 def check_data_keys(data: dict, keys: list[str]) -> bool:
     """Check whether all keys have been defined in the data."""
-    for key in keys:
-        if key not in data:
-            return False
-    return True
+    return all(key in data for key in keys)
 
 
 def prettify_names(names: list[str]) -> list[str]:
@@ -114,7 +111,7 @@ def check_read_mode(mode: str) -> None:
     if mode not in ["r", "a"]:
         raise ValueError(
             "Incorrect opening mode - Please use either `r` or `a` mode to open this file to avoid overwriting"
-            " existing data."
+            " existing data.",
         )
 
 
@@ -133,8 +130,7 @@ def get_unique_id(path: PathLike) -> str:
     import h5py
 
     with h5py.File(path, mode="r", rdcc_nbytes=1024 * 1024 * 4) as f_ptr:
-        unique_id = f_ptr.attrs.get("unique_id") or get_short_hash()
-    return unique_id
+        return f_ptr.attrs.get("unique_id") or get_short_hash()
 
 
 def display_name_contains(
@@ -145,7 +141,7 @@ def display_name_contains(
     quick: bool = False,
     **kwargs: ty.Any,
 ) -> Path | list[Path]:
-    """Return list or item which has specified display name."""
+    """Return a list or item which has specified display name."""
     assert hasattr(klass, "display_name"), "Class object is missing 'display_name' attribute."
     _filelist = []
     for file in filelist:
@@ -224,7 +220,7 @@ def get_object_path(path_or_tag: PathLike, func: ty.Callable, kind: str) -> Path
         filelist: list[Path] = func(path_or_tag)
         if not filelist:
             raise ValueError(f"List of '{kind}' was empty. Input={path_or_tag}; Func={func}")
-        elif len(filelist) > 1:
+        if len(filelist) > 1:
             # if by any chance the selected paths end with the specified tag, let's pick it
             for path in filelist:
                 if path.stem.endswith(str(path_or_tag)):
@@ -286,5 +282,5 @@ def add_array(h5: h5py.File, group: str, name: str, array: np.ndarray) -> None:
     except ValueError:
         raise ValueError(
             f"Dataset {name} already exists in group {group}."
-            f" Please use a different name or delete the existing dataset."
+            f" Please use a different name or delete the existing dataset.",
         ) from None
