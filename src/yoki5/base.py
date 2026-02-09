@@ -661,7 +661,10 @@ class Store:
         if name in list(h5.keys()):
             if h5[name].dtype == dtype:
                 try:
-                    h5[name][:] = data
+                    if h5[name].ndim == 0:
+                        h5[name][()] = data  # scalar dataset
+                    else:
+                        h5[name][:] = data
                     replaced_dataset = True
                 except TypeError:
                     del h5[name]
