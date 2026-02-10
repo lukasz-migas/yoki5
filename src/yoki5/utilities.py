@@ -9,6 +9,7 @@ from pathlib import Path
 
 import h5py
 import numpy as np
+from koyo.decorators import renamed_parameter
 from koyo.secret import get_short_hash
 from koyo.typing import PathLike
 
@@ -133,11 +134,12 @@ def get_unique_id(path: PathLike) -> str:
         return f_ptr.attrs.get("unique_id") or get_short_hash()
 
 
+@renamed_parameter({"get_first": "first"})
 def display_name_contains(
     klass,
     filelist: ty.Iterable[PathLike],
     contains: str,
-    get_first: bool = False,
+    first: bool = False,
     quick: bool = False,
     **kwargs: ty.Any,
 ) -> Path | list[Path]:
@@ -146,7 +148,7 @@ def display_name_contains(
     _filelist = []
     for file in filelist:
         obj = klass(file, **kwargs)
-        if get_first:
+        if first:
             if contains == obj.display_name:
                 _filelist.append(file)
         else:
@@ -154,20 +156,22 @@ def display_name_contains(
                 _filelist.append(file)
         if quick and _filelist:
             break
-    if get_first and _filelist:
+    if first and _filelist:
         return _filelist[0]
     return _filelist
 
 
+@renamed_parameter({"exact_match": "exact", "get_first": "first"})
 def name_contains(
     filelist: ty.Iterable[PathLike],
     contains: str,
-    get_first: bool = False,
+    *,
+    first: bool = False,
     base_dir: PathLike | None = None,
     filename_only: bool = False,
-    exact_match: bool = False,
+    exact: bool = False,
 ) -> Path | list[Path]:
-    """Return list of items which contain specified string."""
+    """Return a list of items which contain specified string."""
     from pathlib import Path
 
     if contains is None:
@@ -185,20 +189,20 @@ def name_contains(
 
         # this will match ANY files in the directory, even if it is not directly in the folder but in the general path
         filelist = list(Path(base_dir).glob(contains))
-        if get_first and filelist:
+        if first and filelist:
             return filelist[0]
         return filelist
 
     # check if contains is a file
     if Path(contains).is_file() and Path(contains).exists():
         path = Path(contains)
-        if get_first:
+        if first:
             return path
         return [path]
 
     filelist_ = []
     contains = contains.lower()
-    if not exact_match:
+    if not exact:
         for file in [Path(p) for p in filelist]:
             if contains in str(file.name if filename_only else file).lower():
                 filelist_.append(file)
@@ -207,7 +211,7 @@ def name_contains(
         for file in [Path(p) for p in filelist]:
             if contains == str((file.name if has_h5 else file.stem) if filename_only else file).lower():
                 filelist_.append(file)
-    if get_first and filelist_:
+    if first and filelist_:
         return filelist_[0]
     return filelist_
 
