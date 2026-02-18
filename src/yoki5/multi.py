@@ -15,17 +15,17 @@ class MultiStore:
     """Base class for multi-dataset wrappers."""
 
     def __init__(self, mode: str = "a"):
-        self._objs: ty.Dict[str, Store] = {}
+        self._objs: dict[str, Store] = {}
         self.mode = mode
         self._validate()
 
     def __repr__(self) -> str:
-        """Return a string representation of the."""
-        return f"{self.__class__.__name__}<present={len(self._objs)}>"
+        """Return a string representation of the object."""
+        return f"{self.__class__.__name__}<n={len(self._objs)}>"
 
     @property
     def n_objects(self) -> int:
-        """Return number of objects."""
+        """Return the number of objects."""
         return len(self._objs)
 
     def _validate(self) -> None:
@@ -37,6 +37,9 @@ class MultiStore:
 
     def _get_any_obj(self):
         return self._objs[self._get_any()]
+
+    def _get_first_obj(self):
+        return next(iter(self._objs.values()))
 
     def _get_obj(self, name: str):
         return self._objs[name]
