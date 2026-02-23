@@ -16,6 +16,7 @@ class MultiStore:
 
     def __init__(self, mode: str = "a"):
         self._objs: dict[str, Store] = {}
+        self._paths: dict[str, Path] = {}
         self.mode = mode
         self._validate()
 
