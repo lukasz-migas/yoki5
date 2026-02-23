@@ -80,6 +80,11 @@ class Store:
         with self.open() as h5:
             del h5[key]
 
+    @staticmethod
+    def _create_group_id(*groups: str) -> str:
+        """Create group id."""
+        return "/".join(groups)
+
     @property
     def store_name(self) -> str:
         """Return short name of the storage object."""
@@ -138,16 +143,12 @@ class Store:
     def get_group_names(self, group: str | None = None, include_group: bool = False) -> list[str]:
         """Get list of group names."""
         with self.open() as h5:
-            names = self._get_group_names(h5, group, include_group)
-        return names
+            return self._get_group_names(h5, group, include_group)
 
     @staticmethod
     def _get_group_names(h5: h5py.Group, group: str | None = None, include_group: bool = False) -> list[str]:
         """Get list of groups."""
-        if not group:
-            names = list(h5.keys())
-        else:
-            names = list(h5[group].keys())
+        names = list(h5.keys()) if not group else list(h5[group].keys())
         if include_group:
             names = [f"{group}/{name}" for name in names]
         return names
@@ -172,8 +173,8 @@ class Store:
             mode = self.mode
         try:
             f_ptr = h5py.File(self.path, mode=mode, rdcc_nbytes=1024 * 1024 * 4)
-        except FileExistsError as err:
-            raise err
+        except FileExistsError:
+            raise
         try:
             yield f_ptr
         finally:
@@ -196,8 +197,7 @@ class Store:
     def keys(self) -> list[str]:
         """Return list of h5 keys."""
         with self.open("r") as h5:
-            names = list(h5.keys())
-        return names
+            return list(h5.keys())
 
     def has_group(self, *groups: str) -> bool:
         """Check whether object has groups."""
@@ -323,7 +323,10 @@ class Store:
                 del group_obj[name]
 
     def get_group_data_and_attrs_for_keys(
-        self, group: str, names: list[str] | None = None, attrs: list[str] | None = None
+        self,
+        group: str,
+        names: list[str] | None = None,
+        attrs: list[str] | None = None,
     ) -> tuple[dict, dict]:
         """Get data for a particular dataset."""
         if names is None:
@@ -336,7 +339,7 @@ class Store:
             attrs_ = {attr: parse_from_attribute(group_obj.attrs.get(attr, None)) for attr in attrs}
         return data_, attrs_
 
-    def set_attr(self, group: str, attr: str, value: str | int | float | bool) -> None:
+    def set_attr(self, group: str, attr: str, value: str | float | bool) -> None:
         """Set attribute value."""
         with self.open(self.mode) as h5:
             group_obj = self._add_group(h5, group)
@@ -347,21 +350,21 @@ class Store:
         """Safely retrieve 1 attribute."""
         with self.open("r") as h5:
             group_obj = self._get_group(h5, group)
-            value = parse_from_attribute(group_obj.attrs.get(attr, default))
-            return value
+            return parse_from_attribute(group_obj.attrs.get(attr, default))
 
     def get_attrs(self, group: str, *attrs: str) -> dict[str, ty.Any]:
         """Safely retrieve attributes."""
         with self.open("r") as h5:
-            attrs_out = self._get_attrs(h5, group, *attrs)
-        return attrs_out
+            return self._get_attrs(h5, group, *attrs)
 
     def _get_attrs(self, h5: h5py.Group, group: str, *attrs: str) -> dict[str, ty.Any]:
         group_obj = self._get_group(h5, group)
         return {item: parse_from_attribute(group_obj.attrs.get(item)) for item in attrs}
 
     def _get_group_or_dataset_data(
-        self, group_or_dataset: h5py.Group | h5py.Dataset, inner: bool = True
+        self,
+        group_or_dataset: h5py.Group | h5py.Dataset,
+        inner: bool = True,
     ) -> tuple[dict, list[str], list[str]]:
         """Retrieve storage data."""
         output = {}
@@ -390,8 +393,7 @@ class Store:
         """Safely retrieve all attributes in particular dataset."""
         with self.open() as h5:
             group_obj = self._get_group(h5, group)
-            _attrs = self._get_group_or_dataset_attrs(group_obj)
-        return _attrs
+            return self._get_group_or_dataset_attrs(group_obj)
 
     def _get_group_or_dataset_attrs(self, group_or_dataset: h5py.Group | h5py.Dataset) -> dict:
         """Retrieve storage data."""
@@ -500,14 +502,13 @@ class Store:
         if fmt == "csc":
             assert check_data_keys(data, ["data", "indices", "indptr", "shape"])
             return csc_matrix((data["data"], data["indices"], data["indptr"]), shape=data["shape"])
-        elif fmt == "csr":
+        if fmt == "csr":
             assert check_data_keys(data, ["data", "indices", "indptr", "shape"])
             return csr_matrix((data["data"], data["indices"], data["indptr"]), shape=data["shape"])
-        elif fmt == "coo":
+        if fmt == "coo":
             assert check_data_keys(data, ["data", "row", "col", "shape"])
             return coo_matrix((data["data"], (data["row"], data["col"])), shape=data["shape"])
-        else:
-            raise ValueError("Could not interpret specified")
+        raise ValueError("Could not interpret specified")
 
     @staticmethod
     def _unpack_sparse_array(
@@ -539,7 +540,10 @@ class Store:
         return data, {"format": array.format, "shape": array.shape, "is_sparse": True}  # type: ignore[union-attr]
 
     def _initialize_dataset(
-        self, h5: h5py.Group, groups: list[str] | None = None, attributes: dict | None = None
+        self,
+        h5: h5py.Group,
+        groups: list[str] | None = None,
+        attributes: dict | None = None,
     ) -> None:
         """Initialize storage."""
         if groups is None:
@@ -615,7 +619,7 @@ class Store:
             h5.attrs[attr] = parse_to_attribute(value)
         except TypeError:
             raise TypeError(
-                f"Object dtype {type(value)} does not have native HDF5 equivalent. (key={attr}; value={value})"
+                f"Object dtype {type(value)} does not have native HDF5 equivalent. (key={attr}; value={value})",
             ) from None
 
     @staticmethod
@@ -648,12 +652,10 @@ class Store:
         """Add data to group."""
         replaced_dataset = False
 
-        if dtype is None:
-            if hasattr(data, "dtype"):
-                dtype = data.dtype
-        if shape is None:
-            if hasattr(data, "shape"):
-                shape = data.shape
+        if dtype is None and hasattr(data, "dtype"):
+            dtype = data.dtype
+        if shape is None and hasattr(data, "shape"):
+            shape = data.shape
         if isinstance(compression, dict):
             compression_opts = compression.get("compression_opts", None)
             compression = compression.get("compression", None)
@@ -740,10 +742,8 @@ class Store:
     @staticmethod
     def _remove_group(h5: h5py.File, name: str, flush: bool = True) -> None:
         """Remove group."""
-        try:
+        with suppress(KeyError):
             del h5[name]
-        except KeyError:
-            pass
         if flush:
             h5.flush()
 
