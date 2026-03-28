@@ -74,8 +74,10 @@ class MultiStore:
         """Temporarily enable writing."""
         mode = self.mode
         self.mode = "a"
-        yield self
-        self.mode = mode
+        try:
+            yield self
+        finally:
+            self.mode = mode
 
     def close(self):
         """Close handle."""

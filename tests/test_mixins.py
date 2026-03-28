@@ -1,6 +1,7 @@
 """Test mixin classes."""
 
 import numpy as np
+
 from yoki5.base import Store
 from yoki5.mixins import ColorMixin, DisplayMixin
 
@@ -15,7 +16,7 @@ class ColorStore(Store, ColorMixin):
 def test_color(tmp_path):
     """Test color."""
     store = ColorStore(tmp_path / "test.h5")
-    color = np.random.randint(0, 255, 3)
+    color = np.random.default_rng().integers(0, 255, 3)
     store.color = color
     assert np.allclose(store.color, color)
 

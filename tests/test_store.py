@@ -61,7 +61,7 @@ def test_store_api(tmp_path):
     store = Store(path, groups=["group1", "group2", "group3"])
 
     # check groups
-    assert "group1" in store.keys()
+    assert "group1" in store
     group_names = store.get_group_names()
     assert len(group_names) == 3
     assert "group1" in group_names
@@ -110,6 +110,34 @@ def test_store_api(tmp_path):
     assert store.has_any_data("group2")
     store.reset_group("group2")
     assert not store.has_any_data("group2")
+
+
+def test_store_write_methods_respect_mode(tmp_path):
+    path = tmp_path / "test.h5"
+    Store(path, groups=["group1"])
+    store_read = Store(path, mode="r")
+
+    with pytest.raises(OSError):
+        store_read.set_attr("group1", "attr", "value")
+
+    with pytest.raises(OSError):
+        store_read.add_attribute(attr=1)
+
+    with pytest.raises(OSError):
+        store_read.add_attributes_to_group("group1", attr=1)
+
+    with pytest.raises(OSError):
+        store_read.add_data_to_group("group1", {"data": [1, 2, 3]})
+
+
+def test_enable_write_restores_mode_after_error(tmp_path):
+    store = Store(tmp_path / "test.h5", mode="r")
+
+    with pytest.raises(RuntimeError), store.enable_write():
+        assert store.mode == "a"
+        raise RuntimeError("boom")
+
+    assert store.mode == "r"
 
 
 @pytest.mark.skipif(not HAS_PANDAS, reason="Pandas not installed")
@@ -180,3 +208,13 @@ def test_repack_and_replace_no_tmp(tmp_path):
 
     repack_and_replace(path_from)
     assert path_from.exists()
+
+
+def test_repack_rejects_non_file_source(tmp_path):
+    with pytest.raises(ValueError, match="must exist"):
+        repack(tmp_path / "missing.h5", tmp_path / "copy.h5")
+
+    source_dir = tmp_path / "source_dir"
+    source_dir.mkdir()
+    with pytest.raises(ValueError, match="must be a file"):
+        repack(source_dir, tmp_path / "copy.h5")

@@ -18,22 +18,22 @@ def repack(path_from: PathLike, path_to: PathLike) -> None:
     if path_from == path_to:
         raise ValueError("The `path_from` and `path_to` cannot be the same.")
     path_from = Path(path_from)
-    assert path_from.is_file(), "The `path_from` must be a file"
     if not path_from.exists():
         raise ValueError("The `path_from` file must exist")
+    if not path_from.is_file():
+        raise ValueError("The `path_from` must be a file")
 
     path_to = Path(path_to)
     if path_to.exists():
         raise ValueError("The `path_to` file must not exist")
 
-    with h5py.File(path_from, "r") as from_f:
-        with h5py.File(path_to, "w") as to_f:
-            # this will copy all groups/arrays
-            for key in from_f.keys():
-                from_f.copy(key, to_f)
-            # copy attributes
-            for key in from_f.attrs.keys():
-                to_f.attrs[key] = from_f.attrs[key]
+    with h5py.File(path_from, "r") as from_f, h5py.File(path_to, "w") as to_f:
+        # this will copy all groups/arrays
+        for key in from_f:
+            from_f.copy(key, to_f)
+        # copy attributes
+        for key in from_f.attrs:
+            to_f.attrs[key] = from_f.attrs[key]
 
 
 def repack_and_replace(path_from: PathLike, path_to: PathLike | None = None) -> None:

@@ -82,7 +82,7 @@ class H5Protocol(Protocol):
         """Get array."""
         ...
 
-    def set_attr(self, group: str, attr: str, value: str | int | float | bool) -> None:
+    def set_attr(self, group: str, attr: str, value: str | float | bool) -> None:
         """Get attribute."""
         ...
 

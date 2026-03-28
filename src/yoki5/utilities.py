@@ -66,9 +66,14 @@ def resize_by_append_2d(h5: h5py.Group, key: str, array: np.ndarray, axis: int) 
 
 def resize_by_insert_2d(h5: h5py.Group, key: str, array: np.ndarray, axis: int, indices: list[int]) -> None:
     """Resize 2D array along specified dimension."""
+    if axis > 1:
+        raise ValueError("Cannot resize 2d array with index larger than 1.")
     h5[key].resize(h5[key].shape[axis] + len(indices), axis=axis)
-    for i, _index in enumerate(indices):
-        h5[key][:, -len(indices) + i] = array
+    for i, index in enumerate(indices):
+        if axis == 0:
+            h5[key][-len(indices) + i, :] = array[index, :]
+        else:
+            h5[key][:, -len(indices) + i] = array[:, index]
 
 
 def check_base_attributes(attrs: dict) -> None:
@@ -88,7 +93,7 @@ def check_data_keys(data: dict, keys: list[str]) -> bool:
 
 def prettify_names(names: list[str]) -> list[str]:
     """Prettify names by removing slashes."""
-    if not isinstance(names, Iterable):
+    if isinstance(names, (str, bytes)) or not isinstance(names, Iterable):
         raise ValueError("Cannot prettify list")
     return [_name.split("/")[-1] for _name in names]
 
@@ -121,7 +126,7 @@ def find_case_insensitive(key: str, available_options: list[str]) -> str:
     _available = [_key.lower() for _key in available_options]
     try:
         index = _available.index(key.lower())
-    except IndexError:
+    except ValueError:
         raise KeyError("Could not retrieve item.") from None
     return available_options[index]
 
@@ -182,10 +187,7 @@ def name_contains(
     if "*" in contains and base_dir:
         # make sure contains has HDF5 extension
         if not contains.endswith(".h5"):
-            end = "*.h5"
-            if contains.endswith("*"):
-                end = end[0:-1]
-            contains += end
+            contains += ".h5" if contains.endswith("*") else "*.h5"
 
         # this will match ANY files in the directory, even if it is not directly in the folder but in the general path
         filelist = list(Path(base_dir).glob(contains))
@@ -252,9 +254,12 @@ def optimize_chunks_along_axis(
         dtype, shape = array.dtype, array.shape
     elif shape is None or dtype is None:
         raise ValueError("You must specify either an array or `shape` and `dtype`")
-    assert len(shape) == 2, "Only supporting 2d arrays at the moment."
-    assert axis <= 1, "Only supporting 2d arrays at the moment, use -1, 0 or 1 in the `axis` argument"
-    assert hasattr(dtype, "itemsize"), "Data type must have the attribute 'itemsize'"
+    if len(shape) != 2:
+        raise ValueError("Only supporting 2d arrays at the moment.")
+    if axis == -1:
+        axis = 1
+    if axis not in (0, 1):
+        raise ValueError("Only supporting 2d arrays at the moment, use -1, 0 or 1 in the `axis` argument")
     item_size = np.dtype(dtype).itemsize
 
     if max_size == 0:

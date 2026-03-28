@@ -127,8 +127,10 @@ class Store:
         """Temporarily enable writing."""
         mode = self.mode
         self.mode = "a"
-        yield self
-        self.mode = mode
+        try:
+            yield self
+        finally:
+            self.mode = mode
 
     def initialize_dataset(self, groups: list | None = None, attributes: dict | None = None) -> None:
         """Safely initialize storage."""
@@ -136,6 +138,11 @@ class Store:
             with self.open() as h5:
                 self._initialize_dataset(h5, groups, attributes)
                 self._flush(h5)
+        elif not Path(self.path).exists():
+            self.HDF5_GROUPS = []
+            self.HDF5_ATTRIBUTES = {}
+            self.VERSION = "N/A"
+            return
         self.HDF5_GROUPS = self.keys()
         self.HDF5_ATTRIBUTES = self.attrs.to_dict()
         self.VERSION = self.HDF5_ATTRIBUTES.get("VERSION", "N/A")
@@ -341,6 +348,7 @@ class Store:
 
     def set_attr(self, group: str, attr: str, value: str | float | bool) -> None:
         """Set attribute value."""
+        self.check_can_write()
         with self.open(self.mode) as h5:
             group_obj = self._add_group(h5, group)
             group_obj.attrs[attr] = parse_to_attribute(value)
@@ -457,11 +465,13 @@ class Store:
 
     def add_attribute(self, **kwargs: ty.Any) -> None:
         """Safely add attributes to storage."""
+        self.check_can_write()
         with self.open() as h5:
             self._add_attributes_to_group(h5, kwargs)
 
     def add_attributes_to_group(self, group: str, **kwargs: ty.Any) -> None:
         """Add attributes to dataset."""
+        self.check_can_write()
         with self.open() as h5:
             group_obj = self._add_group(h5, group)
             self._add_attributes_to_group(group_obj, kwargs)
@@ -486,6 +496,7 @@ class Store:
         **kwargs: ty.Any,
     ) -> None:
         """Safely add data to storage."""
+        self.check_can_write()
         with self.open() as h5:
             if as_sparse or issparse(data):
                 self._add_sparse_data_to_group(h5, group, data, attributes, dtype, **kwargs)
@@ -751,6 +762,7 @@ class Store:
 
         def add_df(self, group: str, df: pd.DataFrame, **_kwargs: ty.Any) -> None:
             """Add dataframe to storage."""
+            self.check_can_write()
             with self.open() as h5:
                 self._add_df(h5, group, df)
 
