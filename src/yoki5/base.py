@@ -346,7 +346,7 @@ class Store:
             attrs_ = {attr: parse_from_attribute(group_obj.attrs.get(attr, None)) for attr in attrs}
         return data_, attrs_
 
-    def set_attr(self, group: str, attr: str, value: str | float | bool) -> None:
+    def set_attr(self, group: str | None, attr: str, value: str | float | bool) -> None:
         """Set attribute value."""
         self.check_can_write()
         with self.open(self.mode) as h5:
@@ -354,13 +354,13 @@ class Store:
             group_obj.attrs[attr] = parse_to_attribute(value)
             self._flush(h5)
 
-    def get_attr(self, group: str, attr: str, default: ty.Any = None) -> ty.Any:
+    def get_attr(self, group: str | None, attr: str, default: ty.Any = None) -> ty.Any:
         """Safely retrieve 1 attribute."""
         with self.open("r") as h5:
             group_obj = self._get_group(h5, group)
             return parse_from_attribute(group_obj.attrs.get(attr, default))
 
-    def get_attrs(self, group: str, *attrs: str) -> dict[str, ty.Any]:
+    def get_attrs(self, group: str | None, *attrs: str) -> dict[str, ty.Any]:
         """Safely retrieve attributes."""
         with self.open("r") as h5:
             return self._get_attrs(h5, group, *attrs)
@@ -634,7 +634,9 @@ class Store:
             ) from None
 
     @staticmethod
-    def _add_group(h5: h5py.File, group: str, flush: bool = True) -> h5py.Group | None:
+    def _add_group(h5: h5py.File, group: str | None, flush: bool = True) -> h5py.Group | None:
+        if group is None:
+            return h5
         try:
             group_obj = h5[group]
         except KeyError:
@@ -644,8 +646,10 @@ class Store:
         return group_obj
 
     @staticmethod
-    def _get_group(h5: h5py.Group, group: str) -> h5py.Group:
+    def _get_group(h5: h5py.Group, group: str | None) -> h5py.Group:
         """Get group."""
+        if group is None:
+            return h5
         return h5[group]
 
     @staticmethod
