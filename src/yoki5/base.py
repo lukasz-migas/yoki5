@@ -486,6 +486,32 @@ class Store:
         for attribute in attributes:
             self._add_attribute_to_group(h5, attribute, attributes[attribute])
 
+    def add_arrays_to_group(
+        self,
+        group: str,
+        dtype: ty.Any = None,
+        chunks: tuple | None = None,
+        maxshape: tuple | None = None,
+        compression: str | int | None = None,
+        compression_opts: dict | None = None,
+        **arrays: ty.Any,
+    ):
+        """Add arrays to the group."""
+        self.check_can_write()
+        with self.open() as h5:
+            group_obj = self._add_group(h5, group)
+            for key, value in arrays.items():
+                self._add_array_to_group(
+                    group_obj,
+                    key,
+                    value,
+                    dtype=dtype or value.dtype,
+                    chunks=chunks,
+                    maxshape=maxshape,
+                    compression=compression,
+                    compression_opts=compression_opts,
+                )
+
     def add_data_to_group(
         self,
         group: str,
