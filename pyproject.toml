@@ -120,6 +120,7 @@ extend-ignore = [
     "D413", # Missing blank line after last section
     "D416", # Section name should end with a colon
     "C901", # Function is too complex
+    "TRY003", # Project uses direct exception messages instead of custom exception classes
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -143,10 +144,9 @@ disallow_subclassing_any = false
 show_error_codes = true
 pretty = false
 
-# # module specific overrides
-# [[tool.mypy.overrides]]
-# module = ["numpy.*",]
-# ignore_errors = true
+[[tool.mypy.overrides]]
+module = ["h5py.*", "pandas.*", "scipy.*"]
+ignore_missing_imports = true
 
 
 # https://coverage.readthedocs.io/en/6.4/config.html

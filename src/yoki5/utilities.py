@@ -27,10 +27,10 @@ def encode_str_array(array: np.ndarray | list[str], encoding: str = "utf-8") -> 
     return np.asarray(out)
 
 
-def decode_str_array(array: np.ndarray | list[str], encoding: str = "utf-8") -> np.ndarray:
+def decode_str_array(array: np.ndarray | list[str | bytes], encoding: str = "utf-8") -> np.ndarray:
     """Decode array of S strings to U strings."""
     if isinstance(array, list):
-        return np.asarray([v.decode(encoding) for v in array])
+        return np.asarray([v.decode(encoding) if isinstance(v, bytes) else v for v in array])
 
     if np.issubdtype(array.dtype, np.dtype("U")):
         return array
@@ -94,7 +94,7 @@ def check_data_keys(data: dict, keys: list[str]) -> bool:
 def prettify_names(names: list[str]) -> list[str]:
     """Prettify names by removing slashes."""
     if isinstance(names, (str, bytes)) or not isinstance(names, Iterable):
-        raise ValueError("Cannot prettify list")
+        raise TypeError("Cannot prettify list")
     return [_name.split("/")[-1] for _name in names]
 
 
@@ -141,7 +141,7 @@ def get_unique_id(path: PathLike) -> str:
 
 @renamed_parameter({"get_first": "first"})
 def display_name_contains(
-    klass,
+    klass: type,
     filelist: ty.Iterable[PathLike],
     contains: str,
     first: bool = False,
@@ -149,16 +149,17 @@ def display_name_contains(
     **kwargs: ty.Any,
 ) -> Path | list[Path]:
     """Return a list or item which has specified display name."""
-    assert hasattr(klass, "display_name"), "Class object is missing 'display_name' attribute."
-    _filelist = []
+    if not hasattr(klass, "display_name"):
+        raise AttributeError("Class object is missing 'display_name' attribute.")
+    _filelist: list[Path] = []
     for file in filelist:
         obj = klass(file, **kwargs)
         if first:
             if contains == obj.display_name:
-                _filelist.append(file)
+                _filelist.append(Path(file))
         else:
             if contains in obj.display_name:
-                _filelist.append(file)
+                _filelist.append(Path(file))
         if quick and _filelist:
             break
     if first and _filelist:
@@ -190,10 +191,10 @@ def name_contains(
             contains += ".h5" if contains.endswith("*") else "*.h5"
 
         # this will match ANY files in the directory, even if it is not directly in the folder but in the general path
-        filelist = list(Path(base_dir).glob(contains))
-        if first and filelist:
-            return filelist[0]
-        return filelist
+        matches = list(Path(base_dir).glob(contains))
+        if first and matches:
+            return matches[0]
+        return matches
 
     # check if contains is a file
     if Path(contains).is_file() and Path(contains).exists():
@@ -221,7 +222,7 @@ def name_contains(
 def get_object_path(path_or_tag: PathLike, func: ty.Callable, kind: str) -> Path:
     """Return a path or check whether a path with the tag exists."""
     if isinstance(path_or_tag, list):
-        raise ValueError("List of paths is not supported.")
+        raise TypeError("List of paths is not supported.")
     if path_or_tag is None or not Path(path_or_tag).exists() or not Path(path_or_tag).is_file():
         filelist: list[Path] = func(path_or_tag)
         if not filelist:

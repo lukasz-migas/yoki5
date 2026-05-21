@@ -43,6 +43,13 @@ matrix = store.get_sparse_array("group-2")
 
 ```
 
+## Behavior notes
+
+- Predicate-style helpers such as `has_array`, `has_any_data`, and `has_keys` return `False` for missing groups.
+- Read helpers such as `get_group_data`, `get_group_data_and_attrs`, `get_group_attrs`, and `get_names_for_group` raise `KeyError` for missing groups and do not create groups while reading.
+- Attributes written through `Store` or `store.attrs` use the same serialization, including round-tripping `None` values.
+- `get_array` and `get_arrays` support both scalar datasets and array datasets.
+
 
 ## Contributing
 

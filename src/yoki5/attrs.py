@@ -5,12 +5,14 @@ from __future__ import annotations
 import typing as ty
 from contextlib import suppress
 
+from yoki5.utilities import parse_from_attribute
+
 if ty.TYPE_CHECKING:
     from yoki5.base import Store
 
 
 class Attributes:
-    """Attributes"""
+    """Dictionary-like access to root HDF5 attributes."""
 
     def __init__(self, parent: Store):
         self.parent = parent
@@ -18,7 +20,7 @@ class Attributes:
     def __getitem__(self, item: str) -> ty.Any:
         """Get attribute."""
         with self.parent.open() as h5:
-            return h5.attrs[item]
+            return parse_from_attribute(h5.attrs[item])
 
     def __contains__(self, key: str) -> bool:
         """Check attribute."""
@@ -29,7 +31,7 @@ class Attributes:
         """Set attribute."""
         self.parent.check_can_write()
         with self.parent.open() as h5:
-            h5.attrs[key] = value
+            self.parent._add_attribute_to_group(h5, key, value)
             h5.flush()
 
     def to_dict(self) -> dict[str, ty.Any]:
@@ -38,7 +40,7 @@ class Attributes:
         with self.parent.open() as h5:
             keys = list(h5.attrs.keys())
             for key in keys:
-                attrs[key] = h5.attrs[key]
+                attrs[key] = parse_from_attribute(h5.attrs[key])
         return attrs
 
     def get(self, key: str, default: ty.Any = None) -> ty.Any:

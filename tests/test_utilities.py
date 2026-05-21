@@ -35,7 +35,7 @@ def test_prettify_names(values, expected):
 
 
 def test_prettify_names_rejects_string():
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         prettify_names("Norm/Test")
 
 
@@ -129,6 +129,18 @@ def test_display_name_contains(tmp_path):
     assert display_name_contains(FakeDisplayStore, [file_a, file_b], "Beta Two", first=True) == file_b
 
 
+def test_display_name_contains_requires_display_name(tmp_path):
+    class MissingDisplayName:
+        def __init__(self, path):
+            self.path = path
+
+    file_a = tmp_path / "Alpha_One.h5"
+    file_a.touch()
+
+    with pytest.raises(AttributeError):
+        display_name_contains(MissingDisplayName, [file_a], "Alpha")
+
+
 def test_name_contains(tmp_path):
     file_a = tmp_path / "alpha_one.h5"
     file_b = tmp_path / "beta_two.h5"
@@ -140,6 +152,14 @@ def test_name_contains(tmp_path):
     assert name_contains([file_a, file_b], "beta_two", filename_only=True, exact=True, first=True) == file_b
     assert name_contains([], str(file_a), first=True) == file_a
     assert name_contains([], "alpha*", base_dir=tmp_path) == [file_a]
+
+
+def test_name_contains_returns_paths_for_string_inputs(tmp_path):
+    file_a = tmp_path / "alpha_one.h5"
+    file_a.touch()
+
+    assert name_contains([str(file_a)], "alpha", first=True) == file_a
+    assert name_contains([str(file_a)], "alpha") == [file_a]
 
 
 def test_get_object_path(tmp_path):
@@ -158,10 +178,17 @@ def test_get_object_path(tmp_path):
         get_object_path("missing", lambda _tag: [], "dataset")
 
 
+def test_get_object_path_rejects_list_input():
+    with pytest.raises(TypeError):
+        get_object_path(["a", "b"], lambda _tag: [], "dataset")
+
+
 def test_optimize_chunks_along_axis():
     array = np.ones((10, 20), dtype=np.float32)
     assert optimize_chunks_along_axis(0, array=array, max_size=0) is None
     assert optimize_chunks_along_axis(-1, array=array) == optimize_chunks_along_axis(1, array=array)
+    assert optimize_chunks_along_axis(0, array=array, auto=False) == (10, 1)
+    assert optimize_chunks_along_axis(1, array=array, auto=False) == (1, 20)
 
     with pytest.raises(ValueError):
         optimize_chunks_along_axis(2, array=array)

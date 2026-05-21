@@ -1,5 +1,7 @@
 """Wrapper around multiple stores."""
 
+from __future__ import annotations
+
 import typing as ty
 from contextlib import contextmanager
 from pathlib import Path
@@ -36,24 +38,28 @@ class MultiStore:
         """Get any available peaks object."""
         return next(iter(self._objs.keys()))
 
-    def _get_any_obj(self):
+    def _get_any_obj(self) -> Store:
+        """Return any contained store object."""
         return self._objs[self._get_any()]
 
-    def _get_first_obj(self):
+    def _get_first_obj(self) -> Store:
+        """Return the first contained store object."""
         return next(iter(self._objs.values()))
 
-    def _get_obj(self, name: str):
+    def _get_obj(self, name: str) -> Store:
+        """Return a store object by name."""
         return self._objs[name]
 
-    def _obj_iter(self, sort: bool = False):
+    def _obj_iter(self, sort: bool = False) -> ty.Iterator[Store]:
+        """Iterate over store objects."""
         names = list(self._objs.keys())
         if sort:
             names = natsorted(names)
         for name in names:
             yield self._objs[name]
 
-    def name_obj_iter(self, sort: bool = False):
-        """Iterator."""
+    def name_obj_iter(self, sort: bool = False) -> ty.Iterator[tuple[str, Store]]:
+        """Iterate over store names and objects."""
         names = list(self._objs.keys())
         if sort:
             names = natsorted(names)
@@ -70,7 +76,7 @@ class MultiStore:
         return self.mode in ["a", "w"]
 
     @contextmanager
-    def enable_write(self):
+    def enable_write(self) -> ty.Iterator[MultiStore]:
         """Temporarily enable writing."""
         mode = self.mode
         self.mode = "a"
@@ -79,7 +85,7 @@ class MultiStore:
         finally:
             self.mode = mode
 
-    def close(self):
+    def close(self) -> None:
         """Close handle."""
         for obj in self._objs.values():
             obj.close()

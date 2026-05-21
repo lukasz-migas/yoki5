@@ -1,5 +1,6 @@
 """Test store class."""
 
+import h5py
 import numpy as np
 import pytest
 from scipy.sparse import csr_matrix
@@ -128,6 +129,111 @@ def test_store_write_methods_respect_mode(tmp_path):
 
     with pytest.raises(OSError):
         store_read.add_data_to_group("group1", {"data": [1, 2, 3]})
+
+
+def test_store_read_helpers_do_not_create_missing_groups(tmp_path):
+    path = tmp_path / "test.h5"
+    Store(path, groups=["group1"])
+    store_read = Store(path, mode="r")
+
+    assert not store_read.has_array("missing", "data")
+    assert not store_read.has_any_data("missing")
+    assert not store_read.has_keys("missing", names=["data"], attrs=["attr"])
+
+    with pytest.raises(KeyError):
+        store_read.get_names_for_group("missing")
+    with pytest.raises(KeyError):
+        store_read.get_group_data("missing")
+    with pytest.raises(KeyError):
+        store_read.get_group_data_and_attrs("missing")
+    with pytest.raises(KeyError):
+        store_read.get_group_attrs("missing")
+
+    with h5py.File(path, "r") as h5:
+        assert "missing" not in h5
+
+
+def test_store_nested_mixed_group_data_and_attrs(tmp_path):
+    store = Store(tmp_path / "test.h5", groups=["root"])
+    store.add_data_to_group("root", {"top": np.array([1, 2, 3])}, attributes={"level": "root"})
+    store.add_data_to_group("root/child", {"leaf": np.array([4, 5, 6])}, attributes={"level": "child"})
+
+    data, attrs = store.get_group_data_and_attrs("root")
+    np.testing.assert_array_equal(data["top"], np.array([1, 2, 3]))
+    np.testing.assert_array_equal(data["child"]["leaf"], np.array([4, 5, 6]))
+    assert attrs["level"] == "root"
+    assert attrs["child"]["level"] == "child"
+
+    output, full_names, short_names = store.get_group_data("root")
+    np.testing.assert_array_equal(output["top"], np.array([1, 2, 3]))
+    np.testing.assert_array_equal(output["child"]["leaf"], np.array([4, 5, 6]))
+    assert set(full_names) == {"/root/top", "/root/child"}
+    assert set(short_names) == {"top", "child"}
+
+    group_attrs = store.get_group_attrs("root")
+    assert group_attrs["level"] == "root"
+    assert group_attrs["child"]["level"] == "child"
+
+
+def test_store_scalar_dataset_roundtrip(tmp_path):
+    store = Store(tmp_path / "test.h5", groups=["group1"])
+    store.set_array("group1", "scalar", np.array(5))
+
+    assert store.get_array("group1", "scalar") == 5
+    assert store.get_arrays("group1", "scalar") == [5]
+
+
+def test_store_recreates_dataset_when_dtype_is_inferred(tmp_path):
+    path = tmp_path / "test.h5"
+    store = Store(path, groups=["group1"])
+    store.set_array("group1", "data", np.array([1.1, 2.2]))
+
+    store.add_arrays_to_group("group1", data=[1, 2])
+
+    with h5py.File(path, "r") as h5:
+        assert h5["group1"]["data"].dtype == np.dtype("int64")
+
+
+def test_store_attribute_roundtrip_uses_common_serialization(tmp_path):
+    path = tmp_path / "test.h5"
+    store = Store(path)
+
+    values = {
+        "none": None,
+        "text": "value",
+        "integer": 1,
+        "floating": 1.5,
+        "flag": True,
+    }
+    for key, value in values.items():
+        store.attrs[key] = value
+
+    for key, value in values.items():
+        assert store.attrs[key] == value
+        assert store.attrs.get(key) == value
+        assert store.get_attr(None, key) == value
+
+    assert store.attrs.to_dict()["none"] is None
+
+
+def test_store_rejects_invalid_attribute_mapping(tmp_path):
+    store = Store(tmp_path / "test.h5", groups=["group1"])
+
+    with pytest.raises(TypeError):
+        store.add_data_to_group("group1", {"data": [1, 2, 3]}, attributes=["not", "a", "dict"])
+
+    with pytest.raises(TypeError):
+        store.add_data_to_group("group1", ["not", "a", "dict"])
+
+
+def test_store_sparse_rejects_malformed_data(tmp_path):
+    store = Store(tmp_path / "test.h5", groups=["group1"])
+    store.set_attr("group1", "format", "csr")
+    store.set_attr("group1", "shape", (2, 2))
+    store.set_array("group1", "data", np.array([1, 2]))
+
+    with pytest.raises(ValueError, match="missing"):
+        store.get_sparse_array("group1")
 
 
 def test_enable_write_restores_mode_after_error(tmp_path):
