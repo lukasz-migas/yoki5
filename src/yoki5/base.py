@@ -279,6 +279,12 @@ class Store:
             group_obj = self._get_group(h5, group)
             return group_obj[name][:]  # type: ignore[no-any-return]
 
+    def get_array_shape(self, group: str, name: str) -> tuple[int, ...]:
+        """Safely retrieve shape of 1 array."""
+        with self.open("r") as h5:
+            group_obj = self._get_group(h5, group)
+            return group_obj[name].shape  # type: ignore[no-any-return]
+
     def get_names(self, group: str) -> list[str]:
         """Get list of names."""
         with self.open("r") as h5:
