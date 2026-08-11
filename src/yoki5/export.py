@@ -22,12 +22,16 @@ def _get_temporary_path(path: Path) -> Path:
     return path.parent / f".{path.name}.{uuid4().hex}.tmp"
 
 
-def _atomic_write(path: Path, writer: ty.Callable[[Path], None]) -> Path:
+def _atomic_write(path: Path, writer: ty.Callable[[Path], None], *, override: bool = False) -> Path:
     """Write to a temporary path and atomically replace the target path."""
     target_path = Path(path)
     temp_path = _get_temporary_path(target_path)
+    if target_path.exists() and not override:
+        raise FileExistsError(f"The file {target_path} already exists. Please specify the override=True.")
     try:
         writer(temp_path)
+        if target_path.exists() and override:
+            target_path.unlink()
         temp_path.rename(target_path)
     except Exception:
         with suppress(FileNotFoundError):
