@@ -138,13 +138,17 @@ class Store:
             with self.open() as h5:
                 self._initialize_dataset(h5, groups, attributes)
                 self._flush(h5)
+                self.HDF5_GROUPS = list(h5.keys())
+                self.HDF5_ATTRIBUTES = dict(h5.attrs.items())
         elif not Path(self.path).exists():
             self.HDF5_GROUPS = []
             self.HDF5_ATTRIBUTES = {}
             self.VERSION = "N/A"
             return
-        self.HDF5_GROUPS = self.keys()
-        self.HDF5_ATTRIBUTES = self.attrs.to_dict()
+        else:
+            with self.open("r") as h5:
+                self.HDF5_GROUPS = list(h5.keys())
+                self.HDF5_ATTRIBUTES = dict(h5.attrs.items())
         self.VERSION = self.HDF5_ATTRIBUTES.get("VERSION", "N/A")
 
     def get_group_names(self, group: str | None = None, include_group: bool = False) -> list[str]:
@@ -599,7 +603,7 @@ class Store:
         for attr_key, attr_value in attributes.items():
             self._add_attribute_to_group(h5, attr_key, attr_value)
         for group in groups:
-            self._add_group(h5, group)
+            self._add_group(h5, group, flush=False)
 
     @staticmethod
     def _pre_initialize_dataset(h5: h5py.File, groups: list[str], attributes: dict) -> tuple[list[str], dict]:
