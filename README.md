@@ -50,6 +50,11 @@ Contributions are always welcome. Please feel free to submit PRs with new featur
 
 ```bash
 git clone https://github.com/lukasz-migas/yoki5.git
-
-pip install -e .[dev]
+cd yoki5
+uv venv
+uv pip install -e '.[dev]'
+uv run --no-sync pytest
 ```
+
+Build the source distribution and wheel with `uv build`. CI tests the built wheel on Python 3.10-3.14
+and reuses the same distributions for tagged releases. Weekly runs also test prerelease dependencies.

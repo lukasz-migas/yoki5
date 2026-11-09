@@ -9,112 +9,163 @@ on:
   pull_request:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 * * 0" # every week (for --pre release tests)
+    - cron: "0 0 * * 0" # weekly prerelease dependency tests
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  UV_MANAGED_PYTHON: "1"
+
 jobs:
-  check-manifest:
+  build:
+    name: Build and Check Distributions
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - run: pipx run check-manifest
-
-  test:
-    uses: pyapp-kit/workflows/.github/workflows/test-pyrepo.yml@v2
-    secrets: inherit
-    with:
-      os: ${{ matrix.os }}
-      python-version: ${{ matrix.python-version }}
-      pip-install-pre-release: ${{ github.event_name == 'schedule' }}
-      report-failures: ${{ github.event_name == 'schedule' }}
-      extras: 'df,test'
-      # changing this to "artifact" prevents uploading to codecov here,
-      # instead it uploads an artifact with the coverage data
-      coverage-upload: artifact
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-        python-version: ["3.10", "3.11", "3.12"]#, "3.13"]
-        include:
-          - python-version: "3.9"
-            os: ubuntu-latest
-          - python-version: "3.9"
-            os: macos-13
-          - python-version: "3.11"
-            os: macos-latest
-          - python-version: "3.12"
-            os: macos-latest
-
-  # now add an additional job to combine and upload the coverage
-  upload_coverage:
-    if: always()
-    needs: [test]
-    uses: pyapp-kit/workflows/.github/workflows/upload-coverage.yml@v2
-    secrets:
-      codecov_token: ${{ secrets.CODECOV_TOKEN }}
-
-  deploy_test:
-    name: Deploy to PyPI (test)
-    needs: [test, check-manifest]
-    if: success() && startsWith(github.ref, 'refs/tags/') && github.event_name != 'schedule'
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: write
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - uses: astral-sh/setup-uv@v9
         with:
-          python-version: "3.x"
+          python-version: "3.12"
+          enable-cache: true
 
-      - name: Build
+      - run: uvx check-manifest
+      # uv builds the wheel from the sdist, checking both packaging paths.
+      - run: uv build
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: distributions
+          path: dist/*
+          if-no-files-found: error
+
+  test:
+    name: Test (${{ matrix.os }} py${{ matrix.python-version }})
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        exclude:
+          - os: macos-latest
+            python-version: "3.10"
+        include:
+          # SciPy's Python 3.10 wheels fail to load on macOS 27.
+          - os: macos-15
+            python-version: "3.10"
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v9
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: distributions
+          path: dist
+
+      - run: uv venv
+
+      - name: Install Built Wheel
+        shell: python
         run: |
-          python -m pip install build
-          python -m build
+          import os
+          import subprocess
+          from pathlib import Path
 
-      - name: Publish to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+          wheel, = Path("dist").glob("*.whl")
+          command = ["uv", "pip", "install", f"{wheel}[test]"]
+          if os.environ["GITHUB_EVENT_NAME"] == "schedule":
+              command.extend(["--prerelease", "allow"])
+          subprocess.run(command, check=True)
+
+      - name: Test
+        run: uv run --no-sync coverage run -p -m pytest -v --color=yes
+
+      - name: Upload Coverage
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: .coverage.*
+          include-hidden-files: true
+          if-no-files-found: error
+
+  upload_coverage:
+    name: Combine and Upload Coverage
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v9
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: coverage-*
+          path: coverage-artifacts
+          merge-multiple: true
+
+      - name: Combine Coverage
+        run: |
+          uvx --from coverage coverage combine coverage-artifacts
+          uvx --from coverage coverage xml -o coverage.xml
+
+      - uses: codecov/codecov-action@v7
+        with:
+          files: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  deploy_test:
+    name: Deploy to TestPyPI
+    needs: [build, test]
+    if: success() && startsWith(github.ref, 'refs/tags/') && github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: distributions
+          path: dist
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
           password: ${{ secrets.TEST_PYPI_TOKEN }}
 
   deploy:
-    name: Deploy
-    needs: [test, check-manifest, deploy_test]
+    name: Deploy to PyPI and GitHub Releases
+    needs: [build, test, deploy_test]
     if: success() && startsWith(github.ref, 'refs/tags/') && github.event_name != 'schedule'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v8
         with:
-          fetch-depth: 0
+          name: distributions
+          path: dist
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.x"
-
-      - name: Build
-        run: |
-          python -m pip install build
-          python -m build
-
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_TOKEN }}
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           generate_release_notes: true
           files: dist/*

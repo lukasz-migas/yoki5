@@ -21,10 +21,10 @@ for line in sys.stdin:
 endef
 export PRINT_HELP_PYSCRIPT
 
-BROWSER := python -c "$$BROWSER_PYSCRIPT"
+BROWSER := uv run --no-sync python -c "$$BROWSER_PYSCRIPT"
 
 help:
-	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
+	@uv run --no-project python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
 clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
 
@@ -48,40 +48,37 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .pytest_cache
 
 test: ## run tests quickly with the default Python
-	pytest
-
-test-all: ## run tests on every Python version with tox
-	tox
+	uv run --no-sync pytest
 
 coverage: ## check code coverage quickly with the default Python
-	coverage run --source src/yoki5 -m pytest
-	coverage report -m
-	coverage html
+	uv run --no-sync coverage run -m pytest
+	uv run --no-sync coverage report -m
+	uv run --no-sync coverage html
 	$(BROWSER) htmlcov/index.html
 
 servedocs: docs ## compile the docs watching for changes
 	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
 release: dist ## package and upload a release
-	twine upload dist/*
+	uv publish
 
-dist: clean ## builds source and wheel package
-	python setup.py sdist
-	python setup.py bdist_wheel
-	ls -l dist
+dist: ## builds source and wheel package
+	uv build
 
-install: clean ## install the package to the active Python's site-packages
-	python setup.py install
+install: ## install the package in a uv environment
+	uv venv --allow-existing
+	uv pip install .
 
 develop:
-	python setup.py develop
+	uv venv --allow-existing
+	uv pip install -e '.[dev]'
 
 pre:
-	pre-commit run -a
+	uv run --no-sync pre-commit run -a
 
 lint:
-	ruff format .
-	ruff . --fix
+	uv run --no-sync ruff format .
+	uv run --no-sync ruff check . --fix
 
 untrack:
 	git rm -r --cached .

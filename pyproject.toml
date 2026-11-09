@@ -6,7 +6,10 @@ build-backend = "hatchling.build"
 source = "vcs"
 
 [tool.hatch.build.targets.sdist]
-include = ["src", "tests", "CHANGELOG.md"]
+include = ["src/yoki5", "tests", "README.md", "LICENSE"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/yoki5"]
 
 # https://peps.python.org/pep-0621/
 [project]
@@ -27,6 +30,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Typing :: Typed",
 ]
 dynamic = ["version"]
@@ -65,7 +69,7 @@ repository = "https://github.com/lukasz-migas/yoki5"
 # https://github.com/charliermarsh/ruff
 [tool.ruff]
 line-length = 120
-target-version = "py39"
+target-version = "py310"
 src = ["src", "tests"]
 
 [tool.ruff.lint]
@@ -124,7 +128,6 @@ extend-ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*.py" = ["D", "S"]
-"setup.py" = ["D"]
 
 # https://docs.pytest.org/en/6.2.x/customize.html
 [tool.pytest.ini_options]
@@ -162,20 +165,17 @@ exclude_lines = [
 
 [tool.coverage.run]
 source = ["yoki5"]
+relative_files = true
+
+[tool.coverage.paths]
+source = ["src/yoki5", "**/site-packages/yoki5"]
 
 # https://github.com/mgedmin/check-manifest#configuration
 [tool.check-manifest]
 ignore = [
     ".github_changelog_generator",
     ".pre-commit-config.yaml",
-    ".ruff_cache/**/*",
-    "setup.py",
-    "tests/**/*",
-    ".idea/**/*",
-    "_version.py",
+    "CLAUDE.md",
     "Makefile",
     "renovate.json",
-    "codecov.yml",
-    ".ruff_cache/**/*",
-    "MANIFEST.in"
 ]
