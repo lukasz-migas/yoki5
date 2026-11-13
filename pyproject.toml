@@ -40,7 +40,7 @@ dependencies = [
     "natsort",
     "loguru",
     "scipy",
-    "koyo>=0.3.5",
+    "koyo>=0.3.7",
 ]
 
 # extras
