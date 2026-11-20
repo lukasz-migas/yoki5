@@ -16,6 +16,7 @@ from scipy.sparse import coo_matrix, csc_matrix, csr_matrix, issparse, spmatrix
 
 from yoki5._pandas import HAS_PANDAS, check_pandas, pd
 from yoki5.attrs import Attributes
+from yoki5.provenance import current_step_id, stamp
 from yoki5.utilities import (
     TIME_FORMAT,
     check_base_attributes,
@@ -120,7 +121,26 @@ class Store:
         """Raises `OSError` if cannot write."""
         if not self.can_write():
             raise OSError(msg + f" Current mode: {self.mode}")
+        self._request_provenance_stamp()
         return True
+
+    def _request_provenance_stamp(self) -> None:
+        """Mark the file to be stamped with the current step id when its next write handle closes.
+
+        Deferring to `open` avoids opening the file a second time while a caller already holds it open.
+        """
+        step_id = current_step_id()
+        if step_id is not None and getattr(self, "_stamped_step_id", None) != step_id:
+            self._pending_step_id = step_id
+
+    def _apply_provenance_stamp(self, h5: h5py.File) -> None:
+        """Write a pending step id stamp through an open, writable handle."""
+        step_id = getattr(self, "_pending_step_id", None)
+        if step_id is None or h5.mode != "r+":
+            return
+        stamp(h5, step_id)
+        self._stamped_step_id = step_id
+        self._pending_step_id = None
 
     @contextmanager
     def enable_write(self) -> ty.Generator[Store, None, None]:
@@ -135,6 +155,8 @@ class Store:
     def initialize_dataset(self, groups: list | None = None, attributes: dict | None = None) -> None:
         """Safely initialize storage."""
         if self.can_write():
+            if not Path(self.path).exists():  # creating a file is a write
+                self._request_provenance_stamp()
             with self.open() as h5:
                 self._initialize_dataset(h5, groups, attributes)
                 self._flush(h5)
@@ -189,6 +211,8 @@ class Store:
         try:
             yield f_ptr
         finally:
+            with suppress(Exception):  # provenance must never break a write
+                self._apply_provenance_stamp(f_ptr)
             f_ptr.close()
 
     def close(self) -> None:
